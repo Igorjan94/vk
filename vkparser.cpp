@@ -64,7 +64,7 @@ string url = "https://api.vk.com/method/wall.get?owner_id=-29253653&count=5&v=5.
 string getMessage = "https://api.vk.com/method/wall.getComments?owner_id=-29253653&count=10&v=5.24&sort=desc&access_token=" + key + "&post_id=";
 string get = "https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token";
 string getName = "https://api.vk.com/method/users.get?v=5.24&user_ids=";
-int user_id =0; 
+int user_id = 0;
 string sendMessage = "https://api.vk.com/method/messages.send?user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key + "&message=";
 
 size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
@@ -114,8 +114,7 @@ void notify(string s, string t)
 
 void toBackup(std::vector<pair<string, int> >& a)
 {
-    if (fork() == 0)
-        execl("rm -rf", "vkparser.temp");
+    remove("vkparser.temp");
     ofstream out("vkparser.temp");
     fori(a.size())
         out << a[i].second << " " << ff(a[i].first, '\n', "\3") << "\n";
