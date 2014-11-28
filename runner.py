@@ -23,7 +23,7 @@ class Example(QtGui.QWidget):
         self.show()
 
     def onActivated(self, text):
-        subprocess.call(["./messenger", text[:-1]])
+        subprocess.Popen(["./messenger", text[:-1]])
 
 def main():
 

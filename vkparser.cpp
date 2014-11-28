@@ -59,12 +59,13 @@ CURLcode res;
 Json::Value root, items;   
 Json::Reader reader;
 string key = "\
+5fd6eba49abd5a1f94127f33803605a4660221181c8f36cdf84864e21d868982635d40ed62e95ff3407cf\
 ";
 string url = "https://api.vk.com/method/wall.get?owner_id=-29253653&count=5&v=5.24&access_token=" + key;
 string getMessage = "https://api.vk.com/method/wall.getComments?owner_id=-29253653&count=10&v=5.24&sort=desc&access_token=" + key + "&post_id=";
 string get = "https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token";
 string getName = "https://api.vk.com/method/users.get?v=5.24&user_ids=";
-int user_id = 0;
+int user_id = 56524497;
 string sendMessage = "https://api.vk.com/method/messages.send?user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key + "&message=";
 
 size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)

@@ -1,6 +1,6 @@
 #include "vk.h"
 #include "ui_vk.h"
-#include <QTimer>
+#include <json/writer.h>
 #include <cstdlib>
 
 using namespace std;
@@ -53,6 +53,19 @@ Json::Value Vk::parse(string url)
     return root;
 }
 
+Json::Value Vk::getUnread(string url3)
+{
+    root3.clear();
+    req3.setUrl(QUrl( QString(url3.data()) ));
+    reply3 = mgr3.get(req3);
+    eventLoop3.exec();
+    if (reply3->error() != QNetworkReply::NoError)
+        qDebug() << reply3->errorString();
+    if (!reader3.parse(reply3->readAll().data(), root3))
+        printf("%s %s\n", "Failed to parse configuration\n", reader3.getFormatedErrorMessages().data());
+    return root3;
+}
+
 void Vk::send(string s)
 {
     s = sendMessage + replace(replace(s, ' ', "%20"), '\n', "%0A");
@@ -63,9 +76,24 @@ void Vk::send(string s)
         qDebug() << reply2->errorString();
 }
 
-void Vk::fromBackup(bool f)
+void Vk::unread()
+{
+    auto x = getUnread(getUnreadMessages)["response"];
+    if (x["count"].asInt() == 0)
+        return;
+    for (auto y : x["items"])
+    {
+        int t = y["message"]["user_id"].asInt();
+        qDebug() << "unread from " << t;
+        if (indexes[t] != currentUser)
+            ui->listWidget->item(indexes[t])->setFont(bold);
+    }
+}
+
+void Vk::fromBackup()
 {
     ifstream file("database");
+    int i = 0;
     string s;
     if (file)
         while (getline(file, s))
@@ -73,23 +101,31 @@ void Vk::fromBackup(bool f)
             int j = 0;
             while (s[j] <= '9' && s[j] >= '0')
                 j++;
-            if (f)
-            {
-                if (atoi(s.substr(0, j).data()) == user_id)
-                {
-                    user = s.substr(j + 1, s.size());
-                    return;
-                }
-            }
-            else
-            {
-                if (s.substr(j + 1, s.size()) == user)
-                {
-                    user_id = atoi(s.substr(0, j).data());
-                    return;
-                }
-            }
+            QString temp(s.substr(j + 1).data());
+            ui->listWidget->addItem(temp);
+            j = atoi(s.substr(0, j).data());
+            mp[temp] = j;
+            indexes[j] = i;
+            ++i;
         }
+}
+
+void Vk::onItemDoubleClicked(QListWidgetItem* item)
+{
+    timer->stop();
+    item->setFont(unbold);
+    archive[currentUser] = ui->textBrowser->toPlainText();
+    ui->textBrowser->clear();
+    QString s = item->text();
+    user_id = mp[s];
+    user = s.toUtf8().data();
+    currentUser = indexes[user_id];
+    sendMessage = "https://api.vk.com/method/messages.send?user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key + "&message=";
+    getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + "&user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key;
+    ui->textBrowser->append(archive[currentUser]);
+    ui->textBrowser->textCursor().movePosition(QTextCursor::End);
+    ui->textBrowser->ensureCursorVisible();
+    timer->start(AUTO_REFRESH * 1000);
 }
 
 void Vk::run()
@@ -100,17 +136,17 @@ void Vk::run()
     items = parse(getMessages)["response"]["items"];
     fori(items.size())
         temp[i] = items[i]["body"].asString();
-    if (temp.size() && pairs.size())
-        if (pairs[0] != temp[0])
+    if (temp.size() && pairs[currentUser].size())
+        if (pairs[currentUser][0] != temp[0])
         {
             int j = 0;
-            while (j < temp.size() && pairs[0] != temp[j])
+            while (j < temp.size() && pairs[currentUser][0] != temp[j])
                 ++j;
             fori(temp.size())
-                pairs[i] = temp[i];
+                pairs[currentUser][i] = temp[i];
             fori(j)
             {
-                ui->textBrowser->append(QString::fromStdString((items[j - i - 1]["out"].asInt() == 0 ? user + ":\n    " : "Я:\n    ") + pairs[j - i - 1]));
+                ui->textBrowser->append(QString::fromStdString((items[j - i - 1]["out"].asInt() == 0 ? user + ":\n    " : "Я:\n    ") + pairs[currentUser][j - i - 1]));
                 ui->textBrowser->textCursor().movePosition(QTextCursor::End);
                 ui->textBrowser->ensureCursorVisible();
             }
@@ -121,42 +157,37 @@ Vk::Vk(char* s, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Vk)
 {
-    if (s != 0)
-    {
-        if (s[0] >= '0' && s[0] <= '9')
-        {
-            user_id = atoi(s);
-            fromBackup(true);
-        }
-        else
-        {
-            user = s;
-            fromBackup(false);
-        }
-    }
-    else
-        fromBackup(true);
     sendMessage = "https://api.vk.com/method/messages.send?user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key + "&message=";
     getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + "&user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key;
+    getUnreadMessages = "https://api.vk.com/method/messages.getDialogs?v=5.27&unread=1&access_token=" + key;
     ui->setupUi(this);
+    ui->listWidget->setTabKeyNavigation(true);
+    bold.setBold(true);
+    unbold.setBold(false);
+    fromBackup();
+    pairs.resize(mp.size());
+    archive.resize(mp.size(), QString::fromStdString(""));
+    currentUser = indexes[user_id];
     QObject::connect(&mgr, SIGNAL(finished(QNetworkReply*)), &eventLoop, SLOT(quit()));
     QObject::connect(&mgr2, SIGNAL(finished(QNetworkReply*)), &eventLoopSend, SLOT(quit()));
+    QObject::connect(&mgr3, SIGNAL(finished(QNetworkReply*)), &eventLoop3, SLOT(quit()));
     qDebug() << user_id << " " << user.data();
-    if (pairs.size() == 0)
-        fori(countMessages)
-            pairs.pb("qwerty&?ADSF"),
-            temp.pb("");
+    fori(countMessages)
+    {
+        forj(pairs.size())
+            pairs[j].pb("qwerty&?ADSF");
+        temp.pb("");
+    }
 
     qDebug() << "all inits done";//------------------------------------------
 
-    QTimer *timer = new QTimer(this);
+    timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(run()));
     timer->start(AUTO_REFRESH * 1000);
-//    QThread *thread = new QThread();
-  //  connect(thread, SIGNAL(started()), this, SLOT(run()));
-    //moveToThread(thread);
-    //thread->start();
-    //run();
+
+    QTimer* watchUnreadMessages = new QTimer(this);
+    connect(watchUnreadMessages, SIGNAL(timeout()), this, SLOT(unread()));
+    watchUnreadMessages->start(AUTO_REFRESH * 1000);
 }
 
 void Vk::onReturn()
@@ -167,7 +198,8 @@ void Vk::onReturn()
 
 Vk::~Vk()
 {
-    delete reply;
+    if (reply != NULL)
+        delete reply;
     if (reply2 != NULL)
         delete reply2;
     delete ui;
