@@ -4,10 +4,12 @@
 #include <bits/stdc++.h>
 #include <unistd.h>
 #include <json/json.h>
+#include <json/writer.h>
 #include <QDialog>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QTextEdit>
 #include <QUrl>
 #include <QUrlQuery>
 #include <QDebug>
@@ -35,11 +37,11 @@ public slots:
 
 private:
     std::string itoa(int i);
-    void send(std::string s);
+    void send(QString s);
     Json::Value parse(std::string url);
     Json::Value getUnread(std::string url);
     void fromBackup();
-    std::string replace(std::string t, char c, std::string to);
+    QString convert(std::string s);
 
     std::vector<std::string> temp;
     std::vector<std::vector<std::string> > pairs;
@@ -51,6 +53,7 @@ private:
     int currentUser = 0;
     Ui::Vk *ui;
     QTimer *timer;
+    QString ret;
     QEventLoop eventLoop, eventLoopSend, eventLoop3;
     QNetworkAccessManager mgr, mgr2, mgr3;
     QNetworkRequest req, req2, req3;
@@ -60,7 +63,6 @@ private:
     QFont bold, unbold;
     int countMessages = 10;
     std::string key = "\
-5fd6eba49abd5a1f94127f33803605a4660221181c8f36cdf84864e21d868982635d40ed62e95ff3407cf\
 ";
     std::string get = "https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token";
     int user_id = 56524497;

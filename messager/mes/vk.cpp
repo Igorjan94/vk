@@ -1,11 +1,11 @@
 #include "vk.h"
 #include "ui_vk.h"
-#include <json/writer.h>
 #include <cstdlib>
 
 using namespace std;
 
 #define AUTO_REFRESH 5
+#define AUTO_REFRESH_UNREAD 20
 
 #define pb push_back
 #define ll long long
@@ -28,15 +28,12 @@ string Vk::itoa(int i)
     return s;
 }
 
-string Vk::replace(string t, char c, string to)
+QString Vk::convert(string s)
 {
-    string temp = "";
-    fori(t.size())
-        if (t[i] != c)
-            temp.pb(t[i]);
-        else
-            temp.append(to);
-    return temp;
+    ret.clear();
+    fori(s.size())
+        ret.append("%" + QString::number((s[i] + 256) % 256, 16));
+    return ret;
 }
 
 Json::Value Vk::parse(string url)
@@ -44,7 +41,8 @@ Json::Value Vk::parse(string url)
     root.clear();
     req.setUrl(QUrl( QString(url.data()) ));
     reply = mgr.get(req);
-    eventLoop.exec();
+    if (!eventLoop.isRunning())
+        eventLoop.exec();
     if (reply->error() != QNetworkReply::NoError)
         qDebug() << reply->errorString();
 
@@ -66,10 +64,10 @@ Json::Value Vk::getUnread(string url3)
     return root3;
 }
 
-void Vk::send(string s)
+void Vk::send(QString s)
 {
-    s = sendMessage + replace(replace(s, ' ', "%20"), '\n', "%0A");
-    req2.setUrl(QUrl( QString(s.data()) ));
+    s = QString::fromStdString(sendMessage) + convert(s.toUtf8().data());
+    req2.setUrl(QUrl(s));
     reply2 = mgr2.get(req2);
     eventLoopSend.exec();
     if (reply2->error() != QNetworkReply::NoError)
@@ -85,8 +83,11 @@ void Vk::unread()
     {
         int t = y["message"]["user_id"].asInt();
         qDebug() << "unread from " << t;
-        if (indexes[t] != currentUser)
-            ui->listWidget->item(indexes[t])->setFont(bold);
+        if (indexes.find(t) == indexes.end())
+            ui->textBrowser->append("-------O_O-----------------------------------new message from " + t);
+        else
+            if (indexes[t] != currentUser)
+                ui->listWidget->item(indexes[t])->setFont(bold);
     }
 }
 
@@ -117,6 +118,7 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     archive[currentUser] = ui->textBrowser->toPlainText();
     ui->textBrowser->clear();
     QString s = item->text();
+    qDebug() << "Current user: " << s;
     user_id = mp[s];
     user = s.toUtf8().data();
     currentUser = indexes[user_id];
@@ -125,6 +127,7 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     ui->textBrowser->append(archive[currentUser]);
     ui->textBrowser->textCursor().movePosition(QTextCursor::End);
     ui->textBrowser->ensureCursorVisible();
+    run();
     timer->start(AUTO_REFRESH * 1000);
 }
 
@@ -147,6 +150,14 @@ void Vk::run()
             fori(j)
             {
                 ui->textBrowser->append(QString::fromStdString((items[j - i - 1]["out"].asInt() == 0 ? user + ":\n    " : "Я:\n    ") + pairs[currentUser][j - i - 1]));
+                cout << items[j - i - 1]["date"];
+                if (!(items[j - i - 1]["attachments"].isObject() && items[j - i - 1].isMember("attachments")))
+                    cout << "attachment: " << items[j - i - 1]["attachments"],
+                    ui->textBrowser->append("--------------------------------------!!!attachments!!!--------------------------------------");
+                if (!(items[j - i - 1]["fwd_messages"].isObject() && items[j - i - 1].isMember("fwd_messages")))
+                    cout << "fwdmsg: " << items[j - i - 1]["fwd_messages"],
+                    ui->textBrowser->append("--------------------------------------!!!fwdMessages!!!--------------------------------------");
+                cout.flush();
                 ui->textBrowser->textCursor().movePosition(QTextCursor::End);
                 ui->textBrowser->ensureCursorVisible();
             }
@@ -161,7 +172,6 @@ Vk::Vk(char* s, QWidget *parent) :
     getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + "&user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key;
     getUnreadMessages = "https://api.vk.com/method/messages.getDialogs?v=5.27&unread=1&access_token=" + key;
     ui->setupUi(this);
-    ui->listWidget->setTabKeyNavigation(true);
     bold.setBold(true);
     unbold.setBold(false);
     fromBackup();
@@ -180,19 +190,19 @@ Vk::Vk(char* s, QWidget *parent) :
     }
 
     qDebug() << "all inits done";//------------------------------------------
-
+    run();
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(run()));
     timer->start(AUTO_REFRESH * 1000);
 
     QTimer* watchUnreadMessages = new QTimer(this);
     connect(watchUnreadMessages, SIGNAL(timeout()), this, SLOT(unread()));
-    watchUnreadMessages->start(AUTO_REFRESH * 1000);
+    watchUnreadMessages->start(AUTO_REFRESH_UNREAD * 1000);
 }
 
 void Vk::onReturn()
 {
-    send(ui->lineEdit->text().toUtf8().data());
+    send(ui->lineEdit->text());
     ui->lineEdit->clear();
 }
 

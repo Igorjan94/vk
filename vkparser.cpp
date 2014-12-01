@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include <curl/curl.h>
 #include <unistd.h>
+#include <json/writer.h>
 #include <json/json.h>
 #include <libnotifymm.h>
 #include <cstdlib>
@@ -174,7 +175,11 @@ void run()
                     pairs[i].first = temp[i].first,
                     pairs[i].second = temp[i].second;
                 fori(j)
+                {
                     notify("New message", pairs[i].first);
+                    if (!(items[i]["attachments"].isObject() && items[i].isMember("attachments")))
+                        cout << items[i]["attachments"] << "\n";
+                }
                 toBackup(pairs);
             }
             else
@@ -189,6 +194,8 @@ void run()
                         {
                             auto y = parse(getName + itoa(x[j]["from_id"].asInt()))["response"][(unsigned int) 0];
                             notify("New comment to " + pairs[i].first, y["first_name"].asString() + " " + y["last_name"].asString() + ": " + x[j]["text"].asString());
+                            if (!(x[j]["attachments"].isObject() && x[j].isMember("attachments")))
+                                cout << x[j]["attachments"] << "\n";
                         }
                         pairs[i].second = temp[i].second;
                     }
