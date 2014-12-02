@@ -289,3 +289,7 @@ template <class Head,class... Tail>
 void readln(Head& head,Tail&... tail){read(head);readln(tail...);}
 
 //:!clang++ vkparser.cpp -o vkparser -std=c++11 -lcurl -I /usr/include/jsoncpp/ -ljsoncpp `pkg-config --cflags --libs libnotifymm-1.0`
+//chat:  https://api.vk.com/method/messages.getHistory?chat_id=12&v=5.24&access_token=
+//lexa:  https://api.vk.com/method/messages.getHistory?user_id=13568580&v=5.24&access_token=
+//unre:  https://api.vk.com/method/messages.getDialogs?unread=1&v=5.24&access_token=
+
