@@ -82,6 +82,8 @@ void Vk::unread()
     for (auto y : x["items"])
     {
         int t = y["message"]["user_id"].asInt();
+        if (!(y["message"]["chat_id"].isObject() && y["message"].isMember("chat_id")))
+            t = y["message"]["chat_id"].asInt();
         qDebug() << "unread from " << t;
         if (indexes.find(t) == indexes.end())
             ui->textBrowser->append("-------O_O-----------------------------------new message from " + t);
@@ -122,8 +124,8 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     user_id = mp[s];
     user = s.toUtf8().data();
     currentUser = indexes[user_id];
-    sendMessage = "https://api.vk.com/method/messages.send?user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key + "&message=";
-    getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + "&user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key;
+    sendMessage = "https://api.vk.com/method/messages.send?v=5.24&access_token=" + key +  (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&message=";
+    getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&v=5.24&access_token=" + key;
     ui->textBrowser->append(archive[currentUser]);
     ui->textBrowser->textCursor().movePosition(QTextCursor::End);
     ui->textBrowser->ensureCursorVisible();
@@ -172,6 +174,7 @@ Vk::Vk(char* s, QWidget *parent) :
     getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + "&user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key;
     getUnreadMessages = "https://api.vk.com/method/messages.getDialogs?v=5.27&unread=1&access_token=" + key;
     ui->setupUi(this);
+    ui->textBrowser->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
     bold.setBold(true);
     unbold.setBold(false);
     fromBackup();
