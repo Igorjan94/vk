@@ -39,7 +39,6 @@ string Vk::convert(string s)
         }
         else
             ret.append("%" + itoa((s[i] + 256) % 256, 16));
-    qDebug() << QString::fromStdString(s);
     return ret;
 }
 
