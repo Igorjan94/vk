@@ -35,11 +35,18 @@ string Vk::convert(string s)
         if (i < s.size() - 1 && s[i] == '\\' && (s[i + 1] == 'n' || s[i + 1] == -47))
         {
             ret.append("%0A");
-            i += 1 + (s[i + 1] == -47);
+            i += 1 + (s[i + 1] == -47);//-47 -- russian t, because has the same place with n (\n == \t_russian)
         }
         else
             ret.append("%" + itoa((s[i] + 256) % 256, 16));
     return ret;
+}
+
+void Vk::setUrls()
+{
+    sendMessage = "https://api.vk.com/method/messages.send?v=5.24&access_token=" + key +  (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&message=";
+    getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&v=5.24&access_token=" + key;
+    markAsRead  = "https://api.vk.com/method/messages.markAsRead?peer_id=" + itoa(user_id) + "&access_token=" + key;
 }
 
 Json::Value Vk::jsonByUrl(string url)
@@ -105,13 +112,11 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     archive[currentUser] = ui->textBrowser->toPlainText();
     ui->textBrowser->clear();
     QString s = item->text();
-    qDebug() << "Current user:" << s << QString::number(user_id);
     user_id = mp[s];
     user = s.toUtf8().data();
+    qDebug() << "Current user:" << s << QString::number(user_id);
     currentUser = indexes[user_id];
-    sendMessage = "https://api.vk.com/method/messages.send?v=5.24&access_token=" + key +  (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&message=";
-    getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&v=5.24&access_token=" + key;
-    markAsRead  = "https://api.vk.com/method/messages.markAsRead?peer_id=" + itoa(user_id) + "&access_token=" + key;
+    setUrls();
     ui->textBrowser->append(archive[currentUser]);
     ui->textBrowser->textCursor().movePosition(QTextCursor::End);
     ui->textBrowser->ensureCursorVisible();
@@ -137,15 +142,17 @@ void Vk::run()
                 pairs[currentUser][i] = temp[i];
             fori(j)
             {
-                ui->textBrowser->append(QString::fromStdString((items[j - i - 1]["out"].asInt() == 0 ? user + ":\n    " : "Я:\n    ") + pairs[currentUser][j - i - 1]));
-                cout << items[j - i - 1]["date"];
+                date.setTime_t(items[j - i - 1]["date"].asInt());
+                qDebug() << QString::fromStdString("got message: " + pairs[currentUser][j - i - 1]);
+                ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) +
+                    QString::fromStdString(":  " + (items[j - i - 1]["out"].asInt() == 0 ? user : "Я") +
+                        "\n     " + pairs[currentUser][j - i - 1]));
                 if (!(items[j - i - 1]["attachments"].isObject() && items[j - i - 1].isMember("attachments")))
                     cout << "attachment: " << items[j - i - 1]["attachments"],
                     ui->textBrowser->append("--------------------------------------!!!attachments!!!--------------------------------------");
                 if (!(items[j - i - 1]["fwd_messages"].isObject() && items[j - i - 1].isMember("fwd_messages")))
                     cout << "fwdmsg: " << items[j - i - 1]["fwd_messages"],
                     ui->textBrowser->append("--------------------------------------!!!fwdMessages!!!--------------------------------------");
-                cout.flush();
                 ui->textBrowser->textCursor().movePosition(QTextCursor::End);
                 ui->textBrowser->ensureCursorVisible();
             }
@@ -156,10 +163,8 @@ Vk::Vk(char* s, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Vk)
 {
-    sendMessage = "https://api.vk.com/method/messages.send?user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key + "&message=";
-    getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + "&user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key;
     getUnreadMessages = "https://api.vk.com/method/messages.getDialogs?v=5.27&unread=1&access_token=" + key;
-    markAsRead  = "https://api.vk.com/method/messages.markAsRead?peer_id=" + itoa(user_id) + "&access_token=" + key;
+    setUrls();
     ui->setupUi(this);
     ui->textBrowser->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
     bold.setBold(true);
@@ -174,13 +179,9 @@ Vk::Vk(char* s, QWidget *parent) :
     fori(pool)
         QObject::connect(&(mgr[i]), SIGNAL(finished(QNetworkReply*)), &(eventLoop[i]), SLOT(quit()));
     qDebug() << user_id << " " << user.data();
-    fori(countMessages)
-    {
-        forj(pairs.size())
-            pairs[j].pb("qwerty&?ADSF");
-        temp.pb("");
-    }
-
+    temp.resize(countMessages);
+    fori(pairs.size())
+        pairs[i].resize(countMessages);
     qDebug() << "all inits done";//------------------------------------------
     run();
     timer = new QTimer(this);
@@ -195,7 +196,7 @@ Vk::Vk(char* s, QWidget *parent) :
 void Vk::onReturn()
 {
     string s = ui->lineEdit->text().toUtf8().data();
-    if (s[0] == '/')
+    if (s[0] == '/' || s[0] == '\\')
     {
         ui->lineEdit->clear();
         char c = s[1];
@@ -215,9 +216,14 @@ void Vk::onReturn()
             case 'c' :
                 countMessages = cc;
                 qDebug() << "countMessages set to" << cc;
-                temp.resize(cc);
+                setUrls();
+                temp.clear();
+                temp.resize(cc, "asfd@#");
                 fori(pairs.size())
+                    pairs[i].clear(),
                     pairs[i].resize(cc);
+                ui->textBrowser->clear();
+                run();
                 break;
             case 'm' :
                 jsonByUrl(markAsRead);
@@ -232,7 +238,8 @@ void Vk::onReturn()
         }
         return;
     }
-    jsonByUrl(sendMessage + convert(ui->lineEdit->text().toUtf8().data()));
+    qDebug() << QString::fromStdString("sent message: " + s);
+    jsonByUrl(sendMessage + convert(s));
     ui->lineEdit->clear();
 }
 

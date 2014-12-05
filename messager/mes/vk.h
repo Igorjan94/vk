@@ -8,6 +8,7 @@
 #include <QDialog>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
+#include <QDateTime>
 #include <QNetworkReply>
 #include <QTextEdit>
 #include <QUrl>
@@ -40,6 +41,7 @@ private:
     Json::Value jsonByUrl(std::string url);
     void fromBackup();
     std::string convert(std::string s);
+    void setUrls();
 
     std::vector<std::string> temp;
     std::vector<std::vector<std::string> > pairs;
@@ -62,6 +64,7 @@ private:
     std::vector<QNetworkReply*>          reply;
     std::vector<Json::Reader>            reader;
     Json::Value root, items;
+    QDateTime date;
     QFont bold, unbold;
     int countMessages = 10;
     std::string key = "\
