@@ -36,12 +36,10 @@ public slots:
     void onItemDoubleClicked(QListWidgetItem* item);
 
 private:
-    std::string itoa(int i);
-    void send(QString s);
-    Json::Value parse(std::string url);
-    Json::Value getUnread(std::string url);
+    std::string itoa(int i, int base);
+    Json::Value jsonByUrl(std::string url);
     void fromBackup();
-    QString convert(std::string s);
+    std::string convert(std::string s);
 
     std::vector<std::string> temp;
     std::vector<std::vector<std::string> > pairs;
@@ -53,13 +51,17 @@ private:
     int currentUser = 0;
     Ui::Vk *ui;
     QTimer *timer;
-    QString ret;
-    QEventLoop eventLoop, eventLoopSend, eventLoop3;
-    QNetworkAccessManager mgr, mgr2, mgr3;
-    QNetworkRequest req, req2, req3;
-    QNetworkReply *reply, *reply2, *reply3;
-    Json::Value root, items, root3;
-    Json::Reader reader, reader3;
+    std::string ret;
+    int AUTO_REFRESH = 5;
+    int AUTO_REFRESH_UNREAD = 20;
+    static const int pool = 5;
+
+    QEventLoop eventLoop[pool];
+    QNetworkAccessManager mgr[pool];
+    std::vector<QNetworkRequest>         req;
+    std::vector<QNetworkReply*>          reply;
+    std::vector<Json::Reader>            reader;
+    Json::Value root, items;
     QFont bold, unbold;
     int countMessages = 10;
     std::string key = "\
@@ -68,6 +70,7 @@ private:
     int user_id = 56524497;
     std::string sendMessage;
     std::string getMessages;
+    std::string markAsRead;
     std::string getUnreadMessages;
 };
 

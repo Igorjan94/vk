@@ -4,9 +4,6 @@
 
 using namespace std;
 
-#define AUTO_REFRESH 5
-#define AUTO_REFRESH_UNREAD 20
-
 #define pb push_back
 #define ll long long
 #define forit(it, r) for (auto it = r.begin(); it != r.end(); it++)
@@ -17,66 +14,55 @@ using namespace std;
 #define fori(n) for (int i = 0; i < n; ++i)
 #define forj(n) for (int j = 0; j < n; ++j)
 
-string Vk::itoa(int i)
+string Vk::itoa(int i, int base = 10)
 {
     string s;
-    while (i >= 10)
-        s.pb(i % 10 + 48),
-        i /= 10;
-    s.pb(i + 48);
+    int k;
+    while (i >= base)
+        k = i % base,
+        s.pb(k > 9 ? k + 'A' - 10 : k + 48),
+        i /= base;
+    k = i % base;
+    s.pb(k > 9 ? k + 'A' - 10 : k + 48);
     reverse(s.begin(), s.end());
     return s;
 }
 
-QString Vk::convert(string s)
+string Vk::convert(string s)
 {
     ret.clear();
     fori(s.size())
-        ret.append("%" + QString::number((s[i] + 256) % 256, 16));
+        if (i < s.size() - 1 && s[i] == '\\' && (s[i + 1] == 'n' || s[i + 1] == -47))
+        {
+            ret.append("%0A");
+            i += 1 + (s[i + 1] == -47);
+        }
+        else
+            ret.append("%" + itoa((s[i] + 256) % 256, 16));
+    qDebug() << QString::fromStdString(s);
     return ret;
 }
 
-Json::Value Vk::parse(string url)
+Json::Value Vk::jsonByUrl(string url)
 {
-    root.clear();
-    req.setUrl(QUrl( QString(url.data()) ));
-    reply = mgr.get(req);
-    if (!eventLoop.isRunning())
-        eventLoop.exec();
-    if (reply->error() != QNetworkReply::NoError)
-        qDebug() << reply->errorString();
+    int i = 0;
+    while (i < pool && eventLoop[i].isRunning())
+        ++i;
+    root[i].clear();
+    req[i].setUrl(QUrl( QString(url.data()) ));
+    reply[i] = mgr[i].get(req[i]);
+    eventLoop[i].exec();
+    if (reply[i]->error() != QNetworkReply::NoError)
+        qDebug() << reply[i]->errorString();
 
-    if (!reader.parse(reply->readAll().data(), root))
-        printf("%s %s\n", "Failed to parse configuration\n", reader.getFormatedErrorMessages().data());
-    return root;
-}
-
-Json::Value Vk::getUnread(string url3)
-{
-    root3.clear();
-    req3.setUrl(QUrl( QString(url3.data()) ));
-    reply3 = mgr3.get(req3);
-    eventLoop3.exec();
-    if (reply3->error() != QNetworkReply::NoError)
-        qDebug() << reply3->errorString();
-    if (!reader3.parse(reply3->readAll().data(), root3))
-        printf("%s %s\n", "Failed to parse configuration\n", reader3.getFormatedErrorMessages().data());
-    return root3;
-}
-
-void Vk::send(QString s)
-{
-    s = QString::fromStdString(sendMessage) + convert(s.toUtf8().data());
-    req2.setUrl(QUrl(s));
-    reply2 = mgr2.get(req2);
-    eventLoopSend.exec();
-    if (reply2->error() != QNetworkReply::NoError)
-        qDebug() << reply2->errorString();
+    if (!reader[i].parse(reply[i]->readAll().data(), root[i]))
+        printf("%s %s\n", "Failed to parse configuration\n", reader[i].getFormatedErrorMessages().data());
+    return root[i];
 }
 
 void Vk::unread()
 {
-    auto x = getUnread(getUnreadMessages)["response"];
+    auto x = jsonByUrl(getUnreadMessages)["response"];
     if (x["count"].asInt() == 0)
         return;
     for (auto y : x["items"])
@@ -120,12 +106,13 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     archive[currentUser] = ui->textBrowser->toPlainText();
     ui->textBrowser->clear();
     QString s = item->text();
-    qDebug() << "Current user: " << s;
+    qDebug() << "Current user:" << s << QString::number(user_id);
     user_id = mp[s];
     user = s.toUtf8().data();
     currentUser = indexes[user_id];
     sendMessage = "https://api.vk.com/method/messages.send?v=5.24&access_token=" + key +  (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&message=";
     getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&v=5.24&access_token=" + key;
+    markAsRead  = "https://api.vk.com/method/messages.markAsRead?peer_id=" + itoa(user_id) + "&access_token=" + key;
     ui->textBrowser->append(archive[currentUser]);
     ui->textBrowser->textCursor().movePosition(QTextCursor::End);
     ui->textBrowser->ensureCursorVisible();
@@ -138,7 +125,7 @@ void Vk::run()
     if (counter++ % 1000 == 0)
         qDebug() << counter;
     items.clear();
-    items = parse(getMessages)["response"]["items"];
+    items = jsonByUrl(getMessages)["response"]["items"];
     fori(items.size())
         temp[i] = items[i]["body"].asString();
     if (temp.size() && pairs[currentUser].size())
@@ -173,6 +160,7 @@ Vk::Vk(char* s, QWidget *parent) :
     sendMessage = "https://api.vk.com/method/messages.send?user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key + "&message=";
     getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + "&user_id=" + itoa(user_id) + "&v=5.24&access_token=" + key;
     getUnreadMessages = "https://api.vk.com/method/messages.getDialogs?v=5.27&unread=1&access_token=" + key;
+    markAsRead  = "https://api.vk.com/method/messages.markAsRead?peer_id=" + itoa(user_id) + "&access_token=" + key;
     ui->setupUi(this);
     ui->textBrowser->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
     bold.setBold(true);
@@ -181,9 +169,11 @@ Vk::Vk(char* s, QWidget *parent) :
     pairs.resize(mp.size());
     archive.resize(mp.size(), QString::fromStdString(""));
     currentUser = indexes[user_id];
-    QObject::connect(&mgr, SIGNAL(finished(QNetworkReply*)), &eventLoop, SLOT(quit()));
-    QObject::connect(&mgr2, SIGNAL(finished(QNetworkReply*)), &eventLoopSend, SLOT(quit()));
-    QObject::connect(&mgr3, SIGNAL(finished(QNetworkReply*)), &eventLoop3, SLOT(quit()));
+    req.resize(pool);
+    reply.resize(pool);
+    reader.resize(pool);
+    fori(pool)
+        QObject::connect(&(mgr[i]), SIGNAL(finished(QNetworkReply*)), &(eventLoop[i]), SLOT(quit()));
     qDebug() << user_id << " " << user.data();
     fori(countMessages)
     {
@@ -205,15 +195,49 @@ Vk::Vk(char* s, QWidget *parent) :
 
 void Vk::onReturn()
 {
-    send(ui->lineEdit->text());
+    string s = ui->lineEdit->text().toUtf8().data();
+    if (s[0] == '/')
+    {
+        ui->lineEdit->clear();
+        char c = s[1];
+        int cc = 0;
+        if (s.size() > 2)
+            cc = atoi(s.substr(3).data());
+        switch (c)
+        {
+            case 'u' :
+                AUTO_REFRESH = cc;
+                qDebug() << "AUTO_REFRESH set to" << cc;
+                break;
+            case 'r' :
+                AUTO_REFRESH_UNREAD = cc;
+                qDebug() << "AUTO_REFRESH_UNREAD set to" << cc;
+                break;
+            case 'c' :
+                countMessages = cc;
+                qDebug() << "countMessages set to" << cc;
+                temp.resize(cc);
+                fori(pairs.size())
+                    pairs[i].resize(cc);
+                break;
+            case 'm' :
+                jsonByUrl(markAsRead);
+                qDebug() << "marked as read";
+                break;
+            case 'e' :
+                qDebug() << "executed" << QString::fromStdString(s.substr(3));
+                cout << jsonByUrl("https://api.vk.com/method/" + s.substr(3) + "&v=5.24&access_token=" + key);
+                break;
+            default:
+                qDebug() << "u == auto_refresh, r == unread, c == count, m = markAsRead, e = execute";
+        }
+        return;
+    }
+    jsonByUrl(sendMessage + convert(ui->lineEdit->text().toUtf8().data()));
     ui->lineEdit->clear();
 }
 
 Vk::~Vk()
 {
-    if (reply != NULL)
-        delete reply;
-    if (reply2 != NULL)
-        delete reply2;
     delete ui;
 }
