@@ -53,6 +53,7 @@ private:
     int currentUser = 0;
     Ui::Vk *ui;
     QTimer *timer;
+    QTimer* watchUnreadMessages;
     std::string ret;
     int AUTO_REFRESH = 5;
     int AUTO_REFRESH_UNREAD = 20;

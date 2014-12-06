@@ -188,7 +188,7 @@ Vk::Vk(char* s, QWidget *parent) :
     connect(timer, SIGNAL(timeout()), this, SLOT(run()));
     timer->start(AUTO_REFRESH * 1000);
 
-    QTimer* watchUnreadMessages = new QTimer(this);
+    watchUnreadMessages = new QTimer(this);
     connect(watchUnreadMessages, SIGNAL(timeout()), this, SLOT(unread()));
     watchUnreadMessages->start(AUTO_REFRESH_UNREAD * 1000);
 }
@@ -207,10 +207,12 @@ void Vk::onReturn()
         {
             case 'u' :
                 AUTO_REFRESH = cc;
+                timer->setInterval(AUTO_REFRESH * 1000);
                 qDebug() << "AUTO_REFRESH set to" << cc;
                 break;
             case 'r' :
                 AUTO_REFRESH_UNREAD = cc;
+                watchUnreadMessages->setInterval(AUTO_REFRESH_UNREAD * 1000);
                 qDebug() << "AUTO_REFRESH_UNREAD set to" << cc;
                 break;
             case 'c' :

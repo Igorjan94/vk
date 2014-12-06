@@ -292,4 +292,4 @@ void readln(Head& head,Tail&... tail){read(head);readln(tail...);}
 //chat:  https://api.vk.com/method/messages.getHistory?chat_id=12&v=5.24&access_token=
 //lexa:  https://api.vk.com/method/messages.getHistory?user_id=13568580&v=5.24&access_token=
 //unre:  https://api.vk.com/method/messages.getDialogs?unread=1&v=5.24&access_token=
-
+//mark:  https://api.vk.com/method/messages.markAsRead?peer_id=131379280&access_token=
