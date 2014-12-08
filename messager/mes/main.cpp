@@ -11,6 +11,5 @@ int main(int argc, char *argv[])
         s = argv[1];
     Vk w(s);
     w.show();
-    w.run();
     return a.exec();
 }

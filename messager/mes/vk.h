@@ -32,7 +32,7 @@ public:
     ~Vk();
 public slots:
     void onReturn();
-    void run();
+    void run(int c);
     void unread();
     void onItemDoubleClicked(QListWidgetItem* item);
 
@@ -52,11 +52,9 @@ private:
     int counter = 0;
     int currentUser = 0;
     Ui::Vk *ui;
-    QTimer *timer;
     QTimer* watchUnreadMessages;
     std::string ret;
-    int AUTO_REFRESH = 5;
-    int AUTO_REFRESH_UNREAD = 20;
+    int AUTO_REFRESH_UNREAD = 10;
     static const int pool = 5;
 
     QEventLoop eventLoop[pool];
@@ -64,10 +62,11 @@ private:
     std::vector<QNetworkRequest>         req;
     std::vector<QNetworkReply*>          reply;
     std::vector<Json::Reader>            reader;
+    std::vector<int> focused;
     Json::Value root, items;
     QDateTime date;
     QFont bold, unbold;
-    int countMessages = 10;
+    int countMessages;
     std::string key = "\
 ";
     std::string get = "https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token";

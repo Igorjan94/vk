@@ -45,15 +45,16 @@ string Vk::convert(string s)
 void Vk::setUrls()
 {
     sendMessage = "https://api.vk.com/method/messages.send?v=5.24&access_token=" + key +  (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&message=";
-    getMessages = "https://api.vk.com/method/messages.getHistory?count=" + itoa(countMessages) + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&v=5.24&access_token=" + key;
+    getMessages = "https://api.vk.com/method/messages.getHistory?v=5.24&access_token=" + key +
+            (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&count=";
     markAsRead  = "https://api.vk.com/method/messages.markAsRead?peer_id=" + itoa(user_id) + "&access_token=" + key;
 }
 
 Json::Value Vk::jsonByUrl(string url)
 {
     int i = 0;
-    while (i < pool && eventLoop[i].isRunning())
-        ++i;
+    while (eventLoop[i].isRunning())
+        i = (i + 1) % pool;
     root[i].clear();
     req[i].setUrl(QUrl( QString(url.data()) ));
     reply[i] = mgr[i].get(req[i]);
@@ -77,11 +78,17 @@ void Vk::unread()
         if (!(y["message"]["chat_id"].isObject() && y["message"].isMember("chat_id")))
             t = y["message"]["chat_id"].asInt();
         qDebug() << "unread from " << t;
-        if (indexes.find(t) == indexes.end())
-            ui->textBrowser->append("-------O_O-----------------------------------new message from " + t);
+        if (indexes.count(t) == 0)
+            ui->textBrowser->append(QString::fromStdString("-----------------------------------O_O-----------------------------------new message from ")
+                                    + QString::fromStdString(itoa(t)));
         else
-            if (indexes[t] != currentUser)
-                ui->listWidget->item(indexes[t])->setFont(bold);
+        {
+            ui->listWidget->item(indexes[t])->setFont(bold);
+            int f = y["unread"].asInt();// - focused[currentUser];
+            if (indexes[t] == currentUser)
+                run(f - focused[currentUser]),
+                focused[currentUser] = f;
+        }
     }
 }
 
@@ -107,12 +114,16 @@ void Vk::fromBackup()
 
 void Vk::onItemDoubleClicked(QListWidgetItem* item)
 {
-    timer->stop();
+    QString s = item->text();
+    this->setWindowTitle(s);
+    int temp = mp[s];
+    if (temp == currentUser)
+        return;
     item->setFont(unbold);
     archive[currentUser] = ui->textBrowser->toPlainText();
     ui->textBrowser->clear();
-    QString s = item->text();
-    user_id = mp[s];
+
+    user_id = temp;
     user = s.toUtf8().data();
     qDebug() << "Current user:" << s << QString::number(user_id);
     currentUser = indexes[user_id];
@@ -120,49 +131,44 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     ui->textBrowser->append(archive[currentUser]);
     ui->textBrowser->textCursor().movePosition(QTextCursor::End);
     ui->textBrowser->ensureCursorVisible();
-    run();
-    timer->start(AUTO_REFRESH * 1000);
+    run(ui->textBrowser->toPlainText().size() <= 10 ? countMessages : 0);
 }
 
-void Vk::run()
+void Vk::run(int c)
 {
     if (counter++ % 1000 == 0)
         qDebug() << counter;
     items.clear();
-    items = jsonByUrl(getMessages)["response"]["items"];
-    fori(items.size())
-        temp[i] = items[i]["body"].asString();
-    if (temp.size() && pairs[currentUser].size())
-        if (pairs[currentUser][0] != temp[0])
-        {
-            int j = 0;
-            while (j < temp.size() && pairs[currentUser][0] != temp[j])
-                ++j;
-            fori(temp.size())
-                pairs[currentUser][i] = temp[i];
-            fori(j)
-            {
-                date.setTime_t(items[j - i - 1]["date"].asInt());
-                qDebug() << QString::fromStdString("got message: " + pairs[currentUser][j - i - 1]);
-                ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) +
-                    QString::fromStdString(":  " + (items[j - i - 1]["out"].asInt() == 0 ? user : "Я") +
-                        "\n     " + pairs[currentUser][j - i - 1]));
-                if (!(items[j - i - 1]["attachments"].isObject() && items[j - i - 1].isMember("attachments")))
-                    cout << "attachment: " << items[j - i - 1]["attachments"],
-                    ui->textBrowser->append("--------------------------------------!!!attachments!!!--------------------------------------");
-                if (!(items[j - i - 1]["fwd_messages"].isObject() && items[j - i - 1].isMember("fwd_messages")))
-                    cout << "fwdmsg: " << items[j - i - 1]["fwd_messages"],
-                    ui->textBrowser->append("--------------------------------------!!!fwdMessages!!!--------------------------------------");
-                ui->textBrowser->textCursor().movePosition(QTextCursor::End);
-                ui->textBrowser->ensureCursorVisible();
-            }
-        }
+    items = jsonByUrl(getMessages + itoa(c))["response"]["items"];
+    int j = items.size();
+    fori(j)
+        pairs[currentUser][i] = items[i]["body"].asString();
+    fori(j)
+    {
+        date.setTime_t(items[j - i - 1]["date"].asInt());
+        qDebug() << QString::fromStdString("got message: " + pairs[currentUser][j - i - 1]);
+        ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) +
+            QString::fromStdString(":  " + (items[j - i - 1]["out"].asInt() == 0 ?
+                //user_name, such difficult because of chats, looks more pretty
+                ui->listWidget->item(indexes[items[j - i - 1]["user_id"].asInt()])->text().toStdString() : "Я")
+            + "\n     " + pairs[currentUser][j - i - 1]));
+        if (!(items[j - i - 1]["attachments"].isObject() && items[j - i - 1].isMember("attachments")))
+            cout << "attachment: " << items[j - i - 1]["attachments"],
+            ui->textBrowser->append("--------------------------------------!!!attachments!!!--------------------------------------");
+        if (!(items[j - i - 1]["fwd_messages"].isObject() && items[j - i - 1].isMember("fwd_messages")))
+            cout << "fwdmsg: " << items[j - i - 1]["fwd_messages"],
+            ui->textBrowser->append("--------------------------------------!!!fwdMessages!!!--------------------------------------");
+        cout.flush();
+        ui->textBrowser->textCursor().movePosition(QTextCursor::End);
+        ui->textBrowser->ensureCursorVisible();
+    }
 }
 
 Vk::Vk(char* s, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Vk)
 {
+    countMessages = 10;
     getUnreadMessages = "https://api.vk.com/method/messages.getDialogs?v=5.27&unread=1&access_token=" + key;
     setUrls();
     ui->setupUi(this);
@@ -172,6 +178,7 @@ Vk::Vk(char* s, QWidget *parent) :
     fromBackup();
     pairs.resize(mp.size());
     archive.resize(mp.size(), QString::fromStdString(""));
+    focused.resize(mp.size(), false);
     currentUser = indexes[user_id];
     req.resize(pool);
     reply.resize(pool);
@@ -183,11 +190,7 @@ Vk::Vk(char* s, QWidget *parent) :
     fori(pairs.size())
         pairs[i].resize(countMessages);
     qDebug() << "all inits done";//------------------------------------------
-    run();
-    timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(run()));
-    timer->start(AUTO_REFRESH * 1000);
-
+    run(countMessages);
     watchUnreadMessages = new QTimer(this);
     connect(watchUnreadMessages, SIGNAL(timeout()), this, SLOT(unread()));
     watchUnreadMessages->start(AUTO_REFRESH_UNREAD * 1000);
@@ -205,14 +208,11 @@ void Vk::onReturn()
             cc = atoi(s.substr(3).data());
         switch (c)
         {
-            case 'u' :
-                AUTO_REFRESH = cc;
-                timer->setInterval(AUTO_REFRESH * 1000);
-                qDebug() << "AUTO_REFRESH set to" << cc;
-                break;
             case 'r' :
                 AUTO_REFRESH_UNREAD = cc;
+                watchUnreadMessages->stop();
                 watchUnreadMessages->setInterval(AUTO_REFRESH_UNREAD * 1000);
+                watchUnreadMessages->start();
                 qDebug() << "AUTO_REFRESH_UNREAD set to" << cc;
                 break;
             case 'c' :
@@ -225,10 +225,12 @@ void Vk::onReturn()
                     pairs[i].clear(),
                     pairs[i].resize(cc);
                 ui->textBrowser->clear();
-                run();
+                run(countMessages);
                 break;
             case 'm' :
+                focused[currentUser] = 0;
                 jsonByUrl(markAsRead);
+                ui->listWidget->item(currentUser)->setFont(unbold);
                 qDebug() << "marked as read";
                 break;
             case 'e' :
@@ -236,11 +238,14 @@ void Vk::onReturn()
                 cout << jsonByUrl("https://api.vk.com/method/" + s.substr(3) + "&v=5.24&access_token=" + key);
                 break;
             default:
-                qDebug() << "u == auto_refresh, r == unread, c == count, m = markAsRead, e = execute";
+                qDebug() << "r == unread, c == count, m = markAsRead, e = execute";
         }
         return;
     }
+    focused[currentUser] = 0;
     qDebug() << QString::fromStdString("sent message: " + s);
+    date.setTime_t(QDateTime::currentMSecsSinceEpoch() / 1000);
+    ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) + QString::fromStdString(":  Я\n   " + s));
     jsonByUrl(sendMessage + convert(s));
     ui->lineEdit->clear();
 }
