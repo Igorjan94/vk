@@ -243,6 +243,7 @@ void Vk::onReturn(string s)
         }
         return;
     }
+    unread();
     focused[currentUser] = 0;
     cout << "sent message: " + s << "\n";
     jsonByUrl(sendMessage + convert(s));

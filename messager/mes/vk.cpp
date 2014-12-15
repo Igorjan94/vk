@@ -47,7 +47,8 @@ void Vk::setUrls()
     sendMessage = "https://api.vk.com/method/messages.send?v=5.24&access_token=" + key +  (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&message=";
     getMessages = "https://api.vk.com/method/messages.getHistory?v=5.24&access_token=" + key +
             (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&count=";
-    markAsRead  = "https://api.vk.com/method/messages.markAsRead?peer_id=" + itoa(user_id) + "&access_token=" + key;
+    markAsRead  = "https://api.vk.com/method/messages.markAsRead?v=5.24&access_token=" + key +
+            (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id);
 }
 
 Json::Value Vk::jsonByUrl(string url)
@@ -199,6 +200,8 @@ Vk::Vk(char* s, QWidget *parent) :
 void Vk::onReturn()
 {
     string s = ui->lineEdit->text().toUtf8().data();
+    if (s == "")
+        return;
     if (s[0] == '/' || s[0] == '\\')
     {
         ui->lineEdit->clear();
@@ -242,6 +245,7 @@ void Vk::onReturn()
         }
         return;
     }
+    unread();
     focused[currentUser] = 0;
     qDebug() << QString::fromStdString("sent message: " + s);
     date.setTime_t(QDateTime::currentMSecsSinceEpoch() / 1000);
