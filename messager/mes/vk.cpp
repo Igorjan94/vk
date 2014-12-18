@@ -252,6 +252,20 @@ void Vk::onReturn()
     ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) + QString::fromStdString(":  Я\n   " + s));
     jsonByUrl(sendMessage + convert(s));
     ui->lineEdit->clear();
+    jsonByUrl(markAsRead);
+}
+
+void Vk::keyPressEvent(QKeyEvent* event)
+{
+    if (event->key() == Qt::Key_Escape)
+        return;
+    if(event->modifiers() & Qt::ControlModifier && event->key() == Qt::Key_M)
+    {
+        cout << "marked as read\n";
+        Vk::jsonByUrl(Vk::markAsRead);
+        return;
+    }
+    QDialog::keyPressEvent(event);
 }
 
 Vk::~Vk()

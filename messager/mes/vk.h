@@ -12,6 +12,7 @@
 #include <QNetworkReply>
 #include <QTextEdit>
 #include <QUrl>
+#include <QKeyEvent>
 #include <QUrlQuery>
 #include <QDebug>
 #include <QEventLoop>
@@ -35,6 +36,7 @@ public slots:
     void run(int c);
     void unread();
     void onItemDoubleClicked(QListWidgetItem* item);
+    void keyPressEvent(QKeyEvent* event);
 
 private:
     std::string itoa(int i, int base);
