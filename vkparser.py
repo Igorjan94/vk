@@ -8,8 +8,8 @@ from gi.repository import Notify
 
 Notify.init("Hello world")
 
-f           = open('/home/igorjan/key.vk', 'r')
-key         = f.read()[:-1]
+fil         = open('/home/igorjan/key.vk', 'r')
+key         = fil.read()[:-1]
 url         = "https://api.vk.com/method/wall.get?owner_id=-29253653&count=5&v=5.24&access_token=" + key
 get         = "https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token"
 getComments = "https://api.vk.com/method/wall.getComments?owner_id=-29253653&v=5.24&sort=desc&access_token=" + key + "&post_id="
@@ -21,6 +21,7 @@ for s in open('fullDatabase', 'r'):
     users[int(l[0])] = l[1]
 
 def notify(s):
+    f(sendMessage + s)
     Hello=Notify.Notification.new("Hello world", s, "dialog-information")
     Hello.set_timeout(Notify.EXPIRES_NEVER)
     Hello.show()
@@ -29,6 +30,7 @@ def f(s):
     return requests.get(s).json()['response']
 
 def j(s):
+    f(sendMessage + s)
     print(json.dumps(s, indent=4, ensure_ascii=False))
 
 def comments(text, post_id, count):
@@ -57,8 +59,13 @@ while (True):
         print("counter = " + str(counter))
     counter += 1
     b = []
-    for s in f(url)["items"]:
-        b.append((s["id"], users[s["from_id"]], s["comments"]["count"], s["text"], s["attachments"] if "attachments" in s.keys() else ""))
+    try:
+        for s in f(url)["items"]:
+            b.append((s["id"], users[s["from_id"]], s["comments"]["count"], s["text"], s["attachments"] if "attachments" in s.keys() else ""))
+    except:
+        print("No internet or WTF?")
+        sleep(5)
+        continue
     flag = False
     i = 0
     while i < len(b) and (len(a) <= i or a[i][0] != b[i][0]):
