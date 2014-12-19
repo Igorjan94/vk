@@ -146,6 +146,9 @@ void Vk::run(int c, bool f = false)
 
 void Vk::init()
 {
+    ifstream in("/home/igorjan/key.vk");
+    in >> key;
+    in.close();
     countMessages = 10;
     getUnreadMessages = "https://api.vk.com/method/messages.getDialogs?v=5.24&unread=1&access_token=" + key;
     setUrls();

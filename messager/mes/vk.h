@@ -69,8 +69,7 @@ private:
     QDateTime date;
     QFont bold, unbold;
     int countMessages;
-    std::string key = "\
-";
+    std::string key;
     std::string get = "https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token";
     int user_id = 56524497;
     std::string sendMessage;

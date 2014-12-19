@@ -169,6 +169,9 @@ Vk::Vk(char* s, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Vk)
 {
+    ifstream in("/home/igorjan/key.vk");
+    in >> key;
+    in.close();
     countMessages = 10;
     getUnreadMessages = "https://api.vk.com/method/messages.getDialogs?v=5.27&unread=1&access_token=" + key;
     setUrls();
@@ -259,12 +262,18 @@ void Vk::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Escape)
         return;
-    if(event->modifiers() & Qt::ControlModifier && event->key() == Qt::Key_M)
-    {
-        cout << "marked as read\n";
-        Vk::jsonByUrl(Vk::markAsRead);
-        return;
-    }
+    if(event->modifiers() & Qt::ControlModifier)
+        if (event->key() == Qt::Key_M)
+        {
+            cout << "marked as read\n";
+            jsonByUrl(markAsRead);
+            return;
+        } else
+        if (event->key() == Qt::Key_L)
+        {
+            cout << jsonByUrl("https://api.vk.com/method/wall.get?owner_id=-29253653&count=5&v=5.24&access_token=" + key);
+            return;
+        }
     QDialog::keyPressEvent(event);
 }
 

@@ -53,15 +53,14 @@ string itoa(int i)
     reverse(whole(s));
     return s;
 }
+// /e wall.addComment?owner_id=-29253653&post_id=19311&text="всем лень, завтра попробую описание к этому написать. http://i.imgur.com/LZ1EqIR.jpg http://i.imgur.com/LVkQNWr.jpg"
 
 string buffer;
 CURL *curl;
 CURLcode res;
 Json::Value root, items;   
 Json::Reader reader;
-string key = "\
-5fd6eba49abd5a1f94127f33803605a4660221181c8f36cdf84864e21d868982635d40ed62e95ff3407cf\
-";
+string key;
 string url = "https://api.vk.com/method/wall.get?owner_id=-29253653&count=5&v=5.24&access_token=" + key;
 string getMessage = "https://api.vk.com/method/wall.getComments?owner_id=-29253653&count=10&v=5.24&sort=desc&access_token=" + key + "&post_id=";
 string get = "https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token";
@@ -107,11 +106,8 @@ void notify(string s, string t)
     Notify::Notification message(s, t, "dialog-information");
     message.set_timeout(Notify::EXPIRES_NEVER);
     message.show();
-    if (s[4] == 'm')
-    {
-        writeln("send message", t);
-        auto x = parse(sendMessage + ff(ff(t, ' ', "%20"), '\n', "%0A"));
-    }
+    writeln("send message", t);
+    auto x = parse(sendMessage + ff(ff(t, ' ', "%20"), '\n', "%0A"));
 }
 
 void toBackup(std::vector<pair<string, int> >& a)
@@ -125,6 +121,8 @@ void toBackup(std::vector<pair<string, int> >& a)
 
 void run()
 {
+    ifstream in("/home/igorjan/key.vk");
+    in >> key;
     Notify::init("init");
     curl_global_init(CURL_GLOBAL_DEFAULT);
     vector< pair<string, int> > pairs, temp;
@@ -173,7 +171,7 @@ void run()
                     ++j;
                 fori(temp.size())
                     pairs[i].first = temp[i].first,
-                    pairs[i].second = temp[i].second;
+                    pairs[i].second = 0;
                 fori(j)
                 {
                     notify("New message", pairs[i].first);
