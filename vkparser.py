@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 from collections import defaultdict
 from time import sleep
 import requests
 import sys
 import json
 import binascii
+import os.path
 from gi.repository import Notify
 
 Notify.init("Hello world")
@@ -16,11 +18,6 @@ sendMessage = "https://api.vk.com/method/messages.send?user_id=56524497&v=5.24&a
 send        = False
 save        = 'output.json'
 names       = 'members.txt'
-
-users = defaultdict(str)
-for s in open(names, 'r'):
-    l = s[:-1].split(' ', 1)
-    users[int(l[0])] = l[1]
 
 def toHtml(s):
     h = str(binascii.hexlify(s.encode('UTF-8')), 'UTF-8')
@@ -61,16 +58,26 @@ def comments(text, post_id, count):
         pr(s, "New comment to " + text)
 
 def getListOfUsers():
-    r = open(members, 'w')
+    if os.path.isfile(names):
+        return
+    r = open(names, 'w')
     urlToGet = "https://api.vk.com/method/groups.getMembers?group_id=29253653&v=5.27&access_token=" + key
     for s in f("https://api.vk.com/method/users.get?user_ids=" + ','.join(map(str, f(urlToGet)["items"])) + "&fields=name&name_case=Nom&v=5.24&access_token=" + key):
         r.write(str(s["id"]) + " " + s["first_name"] + " " + s["last_name"] + "\r")
+    r.write("-29253653 ctdyear2011\r")
+
+getListOfUsers()
+users = defaultdict(str)
+for s in open(names, 'r'):
+    l = s[:-1].split(' ', 1)
+    users[int(l[0])] = l[1]
 
 try:
     a = json.loads(open(save, 'r').read())
 except:
     a = []
 counter = 0
+print("Successfully started")
 
 while (True):
     counter += 1
