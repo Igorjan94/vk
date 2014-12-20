@@ -2,88 +2,103 @@ from collections import defaultdict
 from time import sleep
 import requests
 import sys
-import pickle
 import json
+import binascii
 from gi.repository import Notify
 
 Notify.init("Hello world")
 
-fil         = open('/home/igorjan/key.vk', 'r')
-key         = fil.read()[:-1]
+key         = open('/home/igorjan/key.vk', 'r').read()[:-1]
 url         = "https://api.vk.com/method/wall.get?owner_id=-29253653&count=5&v=5.24&access_token=" + key
 get         = "https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token"
 getComments = "https://api.vk.com/method/wall.getComments?owner_id=-29253653&v=5.24&sort=desc&access_token=" + key + "&post_id="
 sendMessage = "https://api.vk.com/method/messages.send?user_id=56524497&v=5.24&access_token=" + key + "&message="
+send        = False
+save        = 'output.json'
+names       = 'members.txt'
 
 users = defaultdict(str)
-for s in open('fullDatabase', 'r'):
+for s in open(names, 'r'):
     l = s[:-1].split(' ', 1)
     users[int(l[0])] = l[1]
 
-def notify(s):
-    f(sendMessage + s)
-    Hello=Notify.Notification.new("Hello world", s, "dialog-information")
+def toHtml(s):
+    h = str(binascii.hexlify(s.encode('UTF-8')), 'UTF-8')
+    return '%' + '%'.join(h[i : i + 2] for i in range(0, len(h), 2))
+
+def notify(s, t):
+    if send:
+        f(sendMessage + toHtml(s + ":\n" + t))
+    Hello=Notify.Notification.new(s, t, "dialog-information")
     Hello.set_timeout(Notify.EXPIRES_NEVER)
     Hello.show()
 
 def f(s):
-    return requests.get(s).json()['response']
+    s = requests.get(s).json()
+    if "response" in s.keys():
+        return s["response"]
+    return s
 
 def j(s):
-    f(sendMessage + s)
-    print(json.dumps(s, indent=4, ensure_ascii=False))
+    s = json.dumps(s, indent=4, ensure_ascii=False)
+    if send:
+        f(sendMessage + toHtml(s))
+    print(s)
+
+def pr(s, what):
+    if "attachments" in s.keys():
+        x = "\n-----atata-----"
+        j(s["attachments"])
+    else:
+        x = ""
+    notify(what, users[s["from_id"]] + ": " +  s["text"] + " " + x)
 
 def comments(text, post_id, count):
-    if count == 0:
-        return
-    if count < 0:
-        print("o_O count < 0")
+    if count <= 0:
+        print("o_O count <= 0")
         return
     for s in f(getComments + str(post_id) + "&count=" + str(count))["items"]:
-        if "attachments" in s.keys():
-            x = "\n-----atata-----"
-            j(s["attachments"])
-        else:
-            x = ""
-        notify("new comment to " + text + ":\n" + users[s["from_id"]] + ": " +  s["text"] + " " + x)
+        pr(s, "New comment to " + text)
+
+def getListOfUsers():
+    r = open(members, 'w')
+    urlToGet = "https://api.vk.com/method/groups.getMembers?group_id=29253653&v=5.27&access_token=" + key
+    for s in f("https://api.vk.com/method/users.get?user_ids=" + ','.join(map(str, f(urlToGet)["items"])) + "&fields=name&name_case=Nom&v=5.24&access_token=" + key):
+        r.write(str(s["id"]) + " " + s["first_name"] + " " + s["last_name"] + "\r")
 
 try:
-    a = pickle.load(open('output.obj', 'rb'))
+    a = json.loads(open(save, 'r').read())
 except:
     a = []
-
-counter = 1
+counter = 0
 
 while (True):
+    counter += 1
+    if counter > 1:
+        sleep(5)
     if counter % 100 == 0:
         print("counter = " + str(counter))
-    counter += 1
-    b = []
+
     try:
-        for s in f(url)["items"]:
-            b.append((s["id"], users[s["from_id"]], s["comments"]["count"], s["text"], s["attachments"] if "attachments" in s.keys() else ""))
+        b = f(url)["items"]
     except:
         print("No internet or WTF?")
-        sleep(5)
         continue
     flag = False
     i = 0
-    while i < len(b) and (len(a) <= i or a[i][0] != b[i][0]):
-        s = b[i]
-        a.insert(i, s)
-        i += 1
+    while i < len(b) and (len(a) <= i or a[i]["id"] != b[i]["id"]):
+        a.insert(i, b[i])
+        a[i]["comments"]["count"] = 0
+        pr(b[i], "New message ")
         flag = True
-        if s[4] == "":
-            x = ""
-        else:
-            j(s[4])
-            x = "\n-----atata-----"
-        notify("new message from " + s[1] + ":\n" + s[3] + x)
-        comments(s[3], s[0], s[2])
+        i += 1
     for i in range(len(a)):
-        if a[i][2] != b[i][2]:
-            comments(a[i][3], a[i][0], b[i][2] - a[i][2])
+        if a[i]["comments"]["count"] != b[i]["comments"]["count"]:
+            d = b[i]["comments"]["count"] - a[i]["comments"]["count"]
+            comments(a[i]["text"], a[i]["id"], d)
+            a[i]["comments"]["count"] += d
+            flag = True
+
     if flag:
-        pickle.dump(b, open('output.obj', 'wb'))
+        open(save, 'w').write(json.dumps(b, ensure_ascii=False))
         a = b
-    sleep(5)
