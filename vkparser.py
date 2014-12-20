@@ -15,7 +15,7 @@ url         = "https://api.vk.com/method/wall.get?owner_id=-29253653&count=5&v=5
 get         = "https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token"
 getComments = "https://api.vk.com/method/wall.getComments?owner_id=-29253653&v=5.24&sort=desc&access_token=" + key + "&post_id="
 sendMessage = "https://api.vk.com/method/messages.send?user_id=56524497&v=5.24&access_token=" + key + "&message="
-send        = False
+send        = True
 save        = 'output.json'
 names       = 'members.txt'
 
@@ -99,7 +99,7 @@ while (True):
         pr(b[i], "New message ")
         flag = True
         i += 1
-    for i in range(len(a)):
+    for i in range(min(len(a), len(b))):
         if a[i]["comments"]["count"] != b[i]["comments"]["count"]:
             d = b[i]["comments"]["count"] - a[i]["comments"]["count"]
             comments(a[i]["text"], a[i]["id"], d)
