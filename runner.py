@@ -12,7 +12,7 @@ class Example(QtGui.QWidget):
         self.initUI()
     def initUI(self):
         x = 80
-        self.setWindowTitle('comment to' + str(self.text))
+        self.setWindowTitle('comment to ' + str(self.text))
         self.combo = QtGui.QTextEdit(self)
         self.combo.setFixedWidth(400)
         self.combo.setFixedHeight(x)
@@ -32,25 +32,30 @@ class Example(QtGui.QWidget):
     def post(self, text):
         s = self.combo.toPlainText()
         if s.replace('\n', '').replace(' ', '') == '':
+            print('nothing to post :(')
             self.combo.clear()
             return
-        if s != '':
-            network.post(s)
-            sys.exit()
+        network.post(s)
+        sys.exit()
 
     def onClicked(self, text):
         s = self.combo.toPlainText()
+        if self.post_id == 0:
+            print('nothing to comment :(')
+            return
         if s.replace('\n', '').replace(' ', '') == '':
             self.combo.clear()
             return
-        if s != '':
-            network.sendComment(self.post_id, s)
-            sys.exit()
+        network.sendComment(self.post_id, s)
+        sys.exit()
 
 def main():
 
     app = QtGui.QApplication(sys.argv)
-    ex = Example(sys.argv[1], sys.argv[2])
+    if len(sys.argv) < 2:
+        ex = Example(0, 'nothing, it is new comment :)')
+    else:
+        ex = Example(sys.argv[1], sys.argv[2])
     sys.exit(app.exec_())
 
 
