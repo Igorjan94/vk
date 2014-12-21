@@ -1,34 +1,56 @@
-#!/usr/bin/env py
+#!/usr/bin/env python3
 import sys
-import subprocess
+import requests
+import network
 from PyQt4 import QtGui, QtCore
 
 class Example(QtGui.QWidget):
-    def __init__(self):
+    def __init__(self, post_id, text):
         super(Example, self).__init__()
+        self.post_id = post_id
+        self.text = text
         self.initUI()
     def initUI(self):
-        combo = QtGui.QComboBox(self)
-        f = open("database", "r")
-        for s in f:
-            r = s.split(' ')
-            t = r[1] + ' ' + r[2]
-            combo.addItem(t)
-        combo.move(50, 50)
-        combo.setFixedHeight(40)
-        combo.activated[str].connect(self.onActivated)
+        x = 80
+        self.setWindowTitle('comment to' + str(self.text))
+        self.combo = QtGui.QTextEdit(self)
+        self.combo.setFixedWidth(400)
+        self.combo.setFixedHeight(x)
 
-        self.setGeometry(300, 300, 300, 200)
-        self.setWindowTitle('vk launcher')
+        self.button2 = QtGui.QPushButton(self)
+        self.button2.setText('Post this comment!!!')
+        self.button2.move(200, x)
+        self.button2.clicked.connect(self.post)
+
+        self.button = QtGui.QPushButton(self)
+        self.button.setText('Send')
+        self.button.move(0, x)
+        self.button.clicked.connect(self.onClicked)
+
         self.show()
 
-    def onActivated(self, text):
-        subprocess.Popen(["./messenger", text[:-1]])
+    def post(self, text):
+        s = self.combo.toPlainText()
+        if s.replace('\n', '').replace(' ', '') == '':
+            self.combo.clear()
+            return
+        if s != '':
+            network.post(s)
+            sys.exit()
+
+    def onClicked(self, text):
+        s = self.combo.toPlainText()
+        if s.replace('\n', '').replace(' ', '') == '':
+            self.combo.clear()
+            return
+        if s != '':
+            network.sendComment(self.post_id, s)
+            sys.exit()
 
 def main():
 
     app = QtGui.QApplication(sys.argv)
-    ex = Example()
+    ex = Example(sys.argv[1], sys.argv[2])
     sys.exit(app.exec_())
 
 
