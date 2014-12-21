@@ -4,22 +4,22 @@ import json
 import binascii
 import os.path
 
-user_id     = '56524497'
-ctdyear2011 = '-29253653'
-version     = '5.24'
-key         = open('/home/igorjan/key.vk', 'r').read()[:-1]
-api         = 'https://api.vk.com/method/'
-get         = 'https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token'
-url         = api + 'wall.get?owner_id=' + ctdyear2011 + '&count=5&v=' + version + '&access_token=' + key
-getComments = api + 'wall.getComments?owner_id=' + ctdyear2011 + '&v=' + version + '&sort=desc&access_token=' + key + '&post_id='
-sendMessage = api + 'messages.send?user_id=' + user_id + '&v=' + version + '&access_token=' + key + '&message='
-addComment  = api + 'wall.addComment?owner_id=' + ctdyear2011 + '&v=' + version + '&access_token=' + key + '&post_id='
-addPost     = api + 'wall.post?owner_id=' + ctdyear2011 + '&v=' + version + '&access_token=' + key + '&message='
-urlToGet    = api + 'groups.getMembers?group_id=' + ctdyear2011[1:] + '&v=' + version + '&access_token=' + key
-friends     = api + 'users.get?fields=name&name_case=Nom&v=' + version + '&access_token=' + key + '&user_ids='
-save        = 'output.json'
-names       = 'members.txt'
-send        = True
+user_id        = '56524497'
+ctdyear2011    = '-29253653'
+version        = '5.24'
+key            = open('/home/igorjan/key.vk', 'r').read()[:-1]
+api            = 'https://api.vk.com/method/'
+get            = 'https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token'
+url            = api + 'wall.get?owner_id=' + ctdyear2011 + '&count=5&v=' + version + '&access_token=' + key
+getCommentsUrl = api + 'wall.getComments?owner_id=' + ctdyear2011 + '&v=' + version + '&sort=desc&access_token=' + key + '&post_id='
+sendMessage    = api + 'messages.send?user_id=' + user_id + '&v=' + version + '&access_token=' + key + '&message='
+addComment     = api + 'wall.addComment?owner_id=' + ctdyear2011 + '&v=' + version + '&access_token=' + key + '&post_id='
+addPost        = api + 'wall.post?owner_id=' + ctdyear2011 + '&v=' + version + '&access_token=' + key + '&message='
+urlToGet       = api + 'groups.getMembers?group_id=' + ctdyear2011[1:] + '&v=' + version + '&access_token=' + key
+friends        = api + 'users.get?fields=name&name_case=Nom&v=' + version + '&access_token=' + key + '&user_ids='
+save           = 'output.json'
+names          = 'members.txt'
+send           = True
 
 def sendComment(post_id, text):
     f(sendMessage + str(post_id) + '&text=' + toHtml(text))
@@ -60,7 +60,7 @@ def pr(s):
     return x
 
 def getComments(post_id, count):
-    return f(getComments + str(post_id) + '&count=' + str(count))['items']
+    return f(getCommentsUrl + str(post_id) + '&count=' + str(count))['items']
 
 def getListOfUsers():
     if os.path.isfile(names):

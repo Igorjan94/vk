@@ -61,7 +61,7 @@ def main():
             if a[i]["comments"]["count"] != b[i]["comments"]["count"]:
                 d = b[i]["comments"]["count"] - a[i]["comments"]["count"]
                 for s in network.getComments(a[i]["id"], d):
-                    notify("New comment to " + users[a["from_id"]] + ": " + a[i]["text"], s, a[i]["id"])
+                    notify("New comment to " + users[a[i]["from_id"]] + ": " + a[i]["text"], s, a[i]["id"])
                 a[i]["comments"]["count"] += d
                 flag = True
 
