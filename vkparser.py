@@ -9,8 +9,8 @@ from gi.repository import Gtk
 
 users = network.parseListOfUsers()
 
-def ssss(notif_object, action_name, post_id, text):
-    subprocess.Popen(["./runner.py", str(post_id), text])
+def ssss(notif_object, action_name, post_id, reply_id, text):
+    subprocess.Popen(["./runner.py", str(post_id), str(reply_id), text])
     print(str(post_id))
     notif_object.close()
     Gtk.main_quit()
@@ -21,7 +21,7 @@ def notify(s, e, post_id):
         network.f(network.sendMessage + network.toHtml(s + ":\n" + t))
     Hello=Notify.Notification.new(s, t, "dialog-information")
     Hello.set_timeout(Notify.EXPIRES_NEVER)
-    Hello.add_action('vkParser', 'Answer', ssss, post_id, t)
+    Hello.add_action('vkParser', 'Answer', ssss, post_id, e["id"], t)
     Hello.connect('closed', Gtk.main_quit)
     Hello.show()
     Gtk.main()

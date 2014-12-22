@@ -22,7 +22,7 @@ names          = 'members.txt'
 send           = True
 
 def sendComment(post_id, text):
-    f(sendMessage + str(post_id) + '&text=' + toHtml(text))
+    f(sendMessage + post_id + '&text=' + toHtml(text))
 
 def post(text):
     f(addPost + toHtml(text))
