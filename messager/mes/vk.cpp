@@ -24,6 +24,8 @@ string Vk::itoa(int i, int base = 10)
         i /= base;
     k = i % base;
     s.pb(k > 9 ? k + 'A' - 10 : k + 48);
+    if (s.size() == 1)
+        s.pb('0');
     reverse(s.begin(), s.end());
     return s;
 }
@@ -262,6 +264,12 @@ void Vk::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Escape)
         return;
+    if(((event->modifiers() & Qt::ControlModifier) && (event->key() == Qt::Key_R)) || event->key() == Qt::Key_F5)
+    {
+        cout << "updating\n";
+        unread();
+        return;
+    }
     if(event->modifiers() & Qt::ControlModifier)
         if (event->key() == Qt::Key_M)
         {
@@ -273,7 +281,7 @@ void Vk::keyPressEvent(QKeyEvent* event)
         {
             cout << jsonByUrl("https://api.vk.com/method/wall.get?owner_id=-29253653&count=5&v=5.24&access_token=" + key);
             return;
-        }
+        } else
     QDialog::keyPressEvent(event);
 }
 
