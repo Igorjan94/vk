@@ -22,7 +22,7 @@ names          = 'members.txt'
 send           = True
 
 def sendComment(post_id, text):
-    f(sendMessage + post_id + '&text=' + toHtml(text))
+    f(addComment + post_id + '&text=' + toHtml(text))
 
 def post(text):
     f(addPost + toHtml(text))
@@ -69,4 +69,4 @@ def getListOfUsers():
     for s in f(friends + ','.join(map(str, f(urlToGet)['items']))):
         r.write(str(s['id']) + ' ' + s['first_name'] + ' ' + s['last_name'] + '\r')
     r.write('-29253653 ctdyear2011\r')
-
+    r.close()

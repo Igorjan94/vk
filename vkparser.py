@@ -11,7 +11,6 @@ users = network.parseListOfUsers()
 
 def ssss(notif_object, action_name, post_id, reply_id, text):
     subprocess.Popen(["./runner.py", str(post_id), str(reply_id), text])
-    print(str(post_id))
     notif_object.close()
     Gtk.main_quit()
 

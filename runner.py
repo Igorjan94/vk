@@ -50,7 +50,8 @@ class Example(QtGui.QWidget):
             return
         if s.replace('\n', '').replace(' ', '') == '':
             self.combo.clear()
-        return
+            return
+        print("sending comment " + s + " to " + self.post_id + " reply on " + self.reply_id)
         network.sendComment(self.post_id + self.reply_id, s)
         sys.exit()
 
