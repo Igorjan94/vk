@@ -83,7 +83,9 @@ void Vk::unread()
         qDebug() << "unread from " << t;
         if (indexes.count(t) == 0)
             ui->textBrowser->append(QString::fromStdString("-----------------------------------O_O-----------------------------------new message from ")
-                                    + QString::fromStdString(itoa(t)));
+                                    + QString::fromStdString(itoa(t))),
+            ui->textBrowser->textCursor().movePosition(QTextCursor::End),
+            ui->textBrowser->ensureCursorVisible();
         else
         {
             ui->listWidget->item(indexes[t])->setFont(bold);
@@ -250,13 +252,13 @@ void Vk::onReturn()
         }
         return;
     }
+    ui->lineEdit->clear();
     unread();
     focused[currentUser] = 0;
     qDebug() << QString::fromStdString("sent message: " + s);
     date.setTime_t(QDateTime::currentMSecsSinceEpoch() / 1000);
     ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) + QString::fromStdString(":  Я\n   " + s));
     jsonByUrl(sendMessage + convert(s));
-    ui->lineEdit->clear();
     jsonByUrl(markAsRead);
 }
 
