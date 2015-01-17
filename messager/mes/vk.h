@@ -37,6 +37,7 @@ public slots:
     void unread();
     void onItemDoubleClicked(QListWidgetItem* item);
     void keyPressEvent(QKeyEvent* event);
+    void changeEvent(QEvent* e);
 
 private:
     std::string itoa(int i, int base);

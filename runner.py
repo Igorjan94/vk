@@ -31,9 +31,9 @@ class Example(QtGui.QWidget):
         self.show()
 
     def post(self, text):
-        if self.reply_id != 0:
-            self.reply_id = 0
-            onClicked(self, text)
+        if self.reply_id != "":
+            self.reply_id = ""
+            self.onClicked(text)
             return
         s = self.combo.toPlainText()
         if s.replace('\n', '').replace(' ', '') == '':

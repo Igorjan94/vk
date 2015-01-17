@@ -169,6 +169,19 @@ void Vk::run(int c)
     }
 }
 
+void Vk::changeEvent(QEvent *e)
+{
+    if (e->type() == QEvent::ActivationChange)
+        if (this->isActiveWindow())
+            qDebug() << "activated",
+            unread(),
+            watchUnreadMessages->start();
+        else
+            if (!this->isActiveWindow())
+                watchUnreadMessages->stop();
+    QWidget::changeEvent(e);
+}
+
 Vk::Vk(char* s, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Vk)
@@ -202,6 +215,7 @@ Vk::Vk(char* s, QWidget *parent) :
     watchUnreadMessages = new QTimer(this);
     connect(watchUnreadMessages, SIGNAL(timeout()), this, SLOT(unread()));
     watchUnreadMessages->start(AUTO_REFRESH_UNREAD * 1000);
+    //connect(this, SIGNAL())
 }
 
 void Vk::onReturn()

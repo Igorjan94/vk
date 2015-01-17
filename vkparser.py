@@ -16,8 +16,7 @@ def ssss(notif_object, action_name, post_id, reply_id, text):
 
 def notify(s, e, post_id):
     t = users[e["from_id"]] + ": " + e["text"] + " " + network.pr(e)
-    if network.send:
-        network.f(network.sendMessage + network.toHtml(s + ":\n" + t))
+    network.sendMessageFun(s + ":\n" + t)
     Hello=Notify.Notification.new(s, t, "dialog-information")
     Hello.set_timeout(Notify.EXPIRES_NEVER)
     Hello.add_action('vkParser', 'Answer', ssss, post_id, e["id"], t)

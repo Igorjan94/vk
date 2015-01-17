@@ -19,6 +19,7 @@ urlToGet       = api + 'groups.getMembers?group_id=' + ctdyear2011[1:] + '&v=' +
 friends        = api + 'users.get?fields=name&name_case=Nom&v=' + version + '&access_token=' + key + '&user_ids='
 save           = 'output.json'
 names          = 'members.txt'
+maxlength      = 2046
 send           = True
 
 def sendComment(post_id, text):
@@ -45,10 +46,17 @@ def f(s):
         return s['response']
     return s
 
+
+def sendMessageFun(s):
+    if send:
+        s = toHtml(s)
+        for i in range(len(s) // maxlength + (len(s) % maxlength != 0)):
+            f(sendMessage + s[i * maxlength:(i + 1) * maxlength])
+
+
 def j(s):
     s = json.dumps(s, indent=4, ensure_ascii=False)
-    if send:
-        f(sendMessage + toHtml(s))
+    sendMessageFun(s)
     print(s)
 
 def pr(s):
