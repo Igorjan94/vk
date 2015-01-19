@@ -42,7 +42,7 @@ public slots:
 private:
     std::string itoa(int i, int base);
     Json::Value jsonByUrl(std::string url);
-    void fromBackup();
+    void fromBackup(std::string filename, int id);
     std::string convert(std::string s);
     void setUrls();
 
@@ -54,6 +54,7 @@ private:
     std::string user = "me2";
     int counter = 0;
     int currentUser = 0;
+    int countOfUsers = 0;
     Ui::Vk *ui;
     QTimer* watchUnreadMessages;
     std::string ret;

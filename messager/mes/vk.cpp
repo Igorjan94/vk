@@ -82,25 +82,29 @@ void Vk::unread()
             t = y["message"]["chat_id"].asInt();
         qDebug() << "unread from " << t;
         if (indexes.count(t) == 0)
-            ui->textBrowser->append(QString::fromStdString("-----------------------------------O_O-----------------------------------new message from ")
-                                    + QString::fromStdString(itoa(t))),
-            ui->textBrowser->textCursor().movePosition(QTextCursor::End),
-            ui->textBrowser->ensureCursorVisible();
-        else
         {
-            ui->listWidget->item(indexes[t])->setFont(bold);
-            int f = y["unread"].asInt();// - focused[currentUser];
-            if (indexes[t] == currentUser)
-                run(f - focused[currentUser]),
-                focused[currentUser] = f;
+            int z = countOfUsers;
+            fromBackup("fullDatabase", t);
+            if (z == countOfUsers)
+            {
+                ui->textBrowser->append(QString::fromStdString("-----------------------------------O_O-----------------------------------new message from ")
+                                    + QString::fromStdString(itoa(t)));
+                ui->textBrowser->textCursor().movePosition(QTextCursor::End);
+                ui->textBrowser->ensureCursorVisible();
+                continue;
+            }
         }
+        ui->listWidget->item(indexes[t])->setFont(bold);
+        int f = y["unread"].asInt();// - focused[currentUser];
+        if (indexes[t] == currentUser)
+            run(f - focused[currentUser]),
+            focused[currentUser] = f;
     }
 }
 
-void Vk::fromBackup()
+void Vk::fromBackup(string filename = "database", int id = -1)
 {
-    ifstream file("database");
-    int i = 0;
+    ifstream file(filename);
     string s;
     if (file)
         while (getline(file, s))
@@ -109,11 +113,13 @@ void Vk::fromBackup()
             while (s[j] <= '9' && s[j] >= '0')
                 j++;
             QString temp(s.substr(j + 1).data());
-            ui->listWidget->addItem(temp);
             j = atoi(s.substr(0, j).data());
-            mp[temp] = j;
-            indexes[j] = i;
-            ++i;
+            if (id == -1 || j == id)
+            {
+                ui->listWidget->addItem(temp);
+                mp[temp] = j;
+                indexes[j] = countOfUsers++;
+            }
         }
 }
 
@@ -136,6 +142,7 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     ui->textBrowser->append(archive[currentUser]);
     ui->textBrowser->textCursor().movePosition(QTextCursor::End);
     ui->textBrowser->ensureCursorVisible();
+    unread();
     run(ui->textBrowser->toPlainText().size() <= 10 ? countMessages : 0);
 }
 
@@ -197,9 +204,9 @@ Vk::Vk(char* s, QWidget *parent) :
     bold.setBold(true);
     unbold.setBold(false);
     fromBackup();
-    pairs.resize(mp.size());
-    archive.resize(mp.size(), QString::fromStdString(""));
-    focused.resize(mp.size(), false);
+    pairs.resize(mp.size() * 2);
+    archive.resize(mp.size() * 2, QString::fromStdString(""));
+    focused.resize(mp.size() * 2, false);
     currentUser = indexes[user_id];
     req.resize(pool);
     reply.resize(pool);
