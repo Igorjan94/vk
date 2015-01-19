@@ -148,6 +148,8 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
 
 void Vk::run(int c)
 {
+    if (c > countMessages)
+        pairs[currentUser].resize(c);
     if (counter++ % 1000 == 0)
         qDebug() << counter;
     items.clear();
@@ -278,7 +280,7 @@ void Vk::onReturn()
     focused[currentUser] = 0;
     qDebug() << QString::fromStdString("sent message: " + s);
     date.setTime_t(QDateTime::currentMSecsSinceEpoch() / 1000);
-    ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) + QString::fromStdString(":  Я\n   " + s));
+    ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) + QString::fromStdString(":  Я\n     " + s));
     jsonByUrl(sendMessage + convert(s));
     jsonByUrl(markAsRead);
 }
