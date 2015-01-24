@@ -97,7 +97,7 @@ void Vk::unread()
         ui->listWidget->item(indexes[t])->setFont(bold);
         int f = y["unread"].asInt();// - focused[currentUser];
         if (indexes[t] == currentUser)
-            run(f - focused[currentUser]),
+            run(focused[currentUser] == -1 ? max(f + countMessages / 2, countMessages) : f - focused[currentUser]),
             focused[currentUser] = f;
     }
 }
@@ -143,7 +143,6 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     ui->textBrowser->textCursor().movePosition(QTextCursor::End);
     ui->textBrowser->ensureCursorVisible();
     unread();
-    run(ui->textBrowser->toPlainText().size() <= 10 ? countMessages : 0);
 }
 
 void Vk::run(int c)
@@ -208,7 +207,7 @@ Vk::Vk(char* s, QWidget *parent) :
     fromBackup();
     pairs.resize(mp.size() * 2);
     archive.resize(mp.size() * 2, QString::fromStdString(""));
-    focused.resize(mp.size() * 2, false);
+    focused.resize(mp.size() * 2, -1);
     currentUser = indexes[user_id];
     req.resize(pool);
     reply.resize(pool);
