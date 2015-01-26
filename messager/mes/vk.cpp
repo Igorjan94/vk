@@ -143,6 +143,8 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     ui->textBrowser->textCursor().movePosition(QTextCursor::End);
     ui->textBrowser->ensureCursorVisible();
     unread();
+    if (focused[user_id] == -1)
+        run(countMessages);
 }
 
 void Vk::run(int c)
