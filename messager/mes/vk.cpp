@@ -78,7 +78,7 @@ void Vk::unread()
     for (auto y : x["items"])
     {
         int t = y["message"]["user_id"].asInt();
-        if (!(y["message"]["chat_id"].isObject() && y["message"].isMember("chat_id")))
+        if (y["message"].isObject() && y["message"].isMember("chat_id"))
             t = y["message"]["chat_id"].asInt();
         qDebug() << "unread from " << t;
         if (indexes.count(t) == 0)
@@ -97,7 +97,7 @@ void Vk::unread()
         ui->listWidget->item(indexes[t])->setFont(bold);
         int f = y["unread"].asInt();// - focused[currentUser];
         if (indexes[t] == currentUser)
-            run(focused[currentUser] == -1 ? max(f + countMessages / 2, countMessages) : f - focused[currentUser]),
+            run(focused[currentUser] == -1 ? max(f + countMessages / 2, countMessages) : (f - focused[currentUser])),
             focused[currentUser] = f;
     }
 }
@@ -143,7 +143,7 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     ui->textBrowser->textCursor().movePosition(QTextCursor::End);
     ui->textBrowser->ensureCursorVisible();
     unread();
-    if (focused[user_id] == -1)
+    if (focused[currentUser] == -1)
         run(countMessages);
 }
 
@@ -167,10 +167,10 @@ void Vk::run(int c)
                 //user_name, such difficult because of chats, looks more pretty
                 ui->listWidget->item(indexes[items[j - i - 1]["user_id"].asInt()])->text().toStdString() : "Я")
             + "\n     " + pairs[currentUser][j - i - 1]));
-        if (!(items[j - i - 1]["attachments"].isObject() && items[j - i - 1].isMember("attachments")))
+        if (items[j - i - 1].isObject() && items[j - i - 1].isMember("attachments"))
             cout << "attachment: " << items[j - i - 1]["attachments"],
             ui->textBrowser->append("--------------------------------------!!!attachments!!!--------------------------------------");
-        if (!(items[j - i - 1]["fwd_messages"].isObject() && items[j - i - 1].isMember("fwd_messages")))
+        if (items[j - i - 1].isObject() && items[j - i - 1].isMember("fwd_messages"))
             cout << "fwdmsg: " << items[j - i - 1]["fwd_messages"],
             ui->textBrowser->append("--------------------------------------!!!fwdMessages!!!--------------------------------------");
         cout.flush();
