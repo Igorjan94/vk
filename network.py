@@ -7,10 +7,11 @@ import os.path
 user_id        = '56524497'
 ctdyear2011    = '-29253653'
 version        = '5.24'
+count          = 7
 key            = open('/home/igorjan/key.vk', 'r').read()[:-1]
 api            = 'https://api.vk.com/method/'
 get            = 'https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token'
-url            = api + 'wall.get?owner_id=' + ctdyear2011 + '&count=5&v=' + version + '&access_token=' + key
+url            = api + 'wall.get?owner_id=' + ctdyear2011 + '&count=' + str(count) + '&v=' + version + '&access_token=' + key
 getCommentsUrl = api + 'wall.getComments?owner_id=' + ctdyear2011 + '&v=' + version + '&sort=desc&access_token=' + key + '&post_id='
 sendMessage    = api + 'messages.send?user_id=' + user_id + '&v=' + version + '&access_token=' + key + '&message='
 addComment     = api + 'wall.addComment?owner_id=' + ctdyear2011 + '&v=' + version + '&access_token=' + key + '&post_id='
@@ -55,6 +56,11 @@ def sendMessageFun(s):
 
 
 def j(s):
+    for y in s:
+        if y['type'] == 'poll':
+            print('/e polls.addVote?owner_id=' + ctdyear2011 + '&poll_id=' + str(y['poll']['id']) + '&answer_id=')
+            for x in y['poll']['answers']:
+                print('\t' + x['text'] + ': ' + str(x['id']))
     s = json.dumps(s, indent=4, ensure_ascii=False)
     sendMessageFun(s)
     print(s)
