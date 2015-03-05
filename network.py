@@ -3,16 +3,19 @@ import requests
 import json
 import binascii
 import os.path
+import sys
+from time import sleep
 
 user_id        = '56524497'
 ctdyear2011    = '-29253653'
 version        = '5.24'
 count          = 7
+needLikes      = ""#"&need_likes=1"
 key            = open('/home/igorjan/key.vk', 'r').read()[:-1]
 api            = 'https://api.vk.com/method/'
 get            = 'https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token'
 url            = api + 'wall.get?owner_id=' + ctdyear2011 + '&count=' + str(count) + '&v=' + version + '&access_token=' + key
-getCommentsUrl = api + 'wall.getComments?owner_id=' + ctdyear2011 + '&v=' + version + '&sort=desc&access_token=' + key + '&post_id='
+getCommentsUrl = api + 'wall.getComments?owner_id=' + ctdyear2011 + '&v=' + version + '&sort=desc' + needLikes + '&access_token=' + key + '&post_id='
 sendMessage    = api + 'messages.send?user_id=' + user_id + '&v=' + version + '&access_token=' + key + '&message='
 addComment     = api + 'wall.addComment?owner_id=' + ctdyear2011 + '&v=' + version + '&access_token=' + key + '&post_id='
 addPost        = api + 'wall.post?owner_id=' + ctdyear2011 + '&v=' + version + '&access_token=' + key + '&message='
@@ -22,6 +25,9 @@ save           = 'output.json'
 names          = 'members.txt'
 maxlength      = 2046
 send           = True
+
+def printJson(s):
+    print(json.dumps(s, indent=4, ensure_ascii=False))
 
 def sendComment(post_id, text):
     f(addComment + post_id + '&text=' + toHtml(text))
@@ -42,18 +48,20 @@ def toHtml(s):
     return '%' + '%'.join(h[i : i + 2] for i in range(0, len(h), 2))
 
 def f(s):
-    s = requests.get(s).json()
+    if len(s) > maxlength:
+        (url, param) = s.rsplit('&', 1)
+        param = param.split('=', 1)
+        s = requests.post(url, {param[0] : binascii.unhexlify(param[1].replace('%', '')).decode('utf-8')}).json()
+    else:
+        s = requests.get(s).json()
     if 'response' in s.keys():
         return s['response']
     return s
 
-
 def sendMessageFun(s):
     if send:
         s = toHtml(s)
-        for i in range(len(s) // maxlength + (len(s) % maxlength != 0)):
-            f(sendMessage + s[i * maxlength:(i + 1) * maxlength])
-
+        f(sendMessage + s)
 
 def j(s):
     for y in s:
@@ -74,7 +82,11 @@ def pr(s):
     return x
 
 def getComments(post_id, count):
-    return f(getCommentsUrl + str(post_id) + '&count=' + str(count))['items']
+    x = f(getCommentsUrl + str(post_id) + '&count=' + str(count))
+    if "items" in x.keys():
+        return x["items"]
+    print(x)
+    raise NameError('error in getComments')
 
 def getListOfUsers():
     if os.path.isfile(names):
@@ -84,3 +96,33 @@ def getListOfUsers():
         r.write(str(s['id']) + ' ' + s['first_name'] + ' ' + s['last_name'] + '\r')
     r.write('-29253653 ctdyear2011\r')
     r.close()
+
+def getStat():
+    a = []
+    n = 100
+    for i in range(40):
+        count = n
+        url = api + 'wall.get?owner_id=' + ctdyear2011 + '&count=' + str(count) + '&v=' + version + '&access_token=' + key
+        x = f(url + '&offset=' + str(i * n))
+        #print(x)
+        if 'items' in x.keys():
+            for y in x['items']:
+#                if (y['id'] == 9281):
+#                    print(y)
+#                    sys.exit()
+                a.append((y['comments']['count'], y['id']))
+        else:
+            break
+    print(sorted(a)[::-1])
+
+#getStat()
+
+#url = "http://codeforces.ru/api/contest.standings?contestId=512&from=1&count=2"
+#printJson(f(url))
+
+#print(json.dumps(getComments(19785, 10), indent=4, ensure_ascii=False))
+
+#for x in range(313):
+#    if x > 0 and x != 5 and x != 9:
+#        f(api + 'wall.delete?post_id=' + str(x) + '&access_token=' + key)
+#        sleep(0.5)

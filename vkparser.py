@@ -44,7 +44,8 @@ def main():
 
         try:
             b = network.f(network.url)["items"]
-        except:
+        except Exception as e:
+            print(e)
             print("No internet or WTF?")
             continue
         flag = False
@@ -58,9 +59,14 @@ def main():
         for i in range(min(len(a), len(b))):
             if a[i]["comments"]["count"] != b[i]["comments"]["count"]:
                 d = b[i]["comments"]["count"] - a[i]["comments"]["count"]
-                for s in network.getComments(a[i]["id"], d):
-                    notify("New comment to " + users[a[i]["from_id"]] + ": " + a[i]["text"], s, a[i]["id"])
-                a[i]["comments"]["count"] += d
+                if (d > 0):
+                    try:
+                        for s in reversed(network.getComments(a[i]["id"], d)):
+                            notify("New comment to " + users[a[i]["from_id"]] + ": " + a[i]["text"], s, a[i]["id"])
+                    except NameError:
+                        print("O_o")
+                a[i]["comments"]["count"] = b[i]["comments"]["count"]
+                open(network.save, 'w').write(json.dumps(b, ensure_ascii=False))
                 flag = True
 
         if flag:
