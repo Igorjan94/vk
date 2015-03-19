@@ -29,7 +29,7 @@ class Vk : public QDialog
     Q_OBJECT
 
 public:
-    explicit Vk(char *, QWidget *parent = 0);
+    explicit Vk(QWidget *parent = 0);
     ~Vk();
 public slots:
     void onReturn();

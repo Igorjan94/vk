@@ -7,12 +7,12 @@ using namespace std;
 #define pb push_back
 #define ll long long
 #define forit(it, r) for (auto it = r.begin(); it != r.end(); it++)
-#define forn(i, n) for (int i = 0; i < n; ++i)
-#define forn1(i, n) for (int i = 1; i < n; ++i)
-#define FOR(i, m, n) for (int i = m; i < n; ++i)
-#define ROF(i, m, n) for (int i = m; i >= n; --i)
-#define fori(n) for (int i = 0; i < n; ++i)
-#define forj(n) for (int j = 0; j < n; ++j)
+#define forn(i, n)   for (int i = 0; i < (int) n; ++i)
+#define forn1(i, n)  for (int i = 1; i < (int) n; ++i)
+#define FOR(i, m, n) for (int i = m; i < (int) n; ++i)
+#define ROF(i, m, n) for (int i = m; i >= (int) n; --i)
+#define fori(n)      for (int i = 0; i < (int) n; ++i)
+#define forj(n)      for (int j = 0; j < (int) n; ++j)
 
 string Vk::itoa(int i, int base = 10)
 {
@@ -34,7 +34,7 @@ string Vk::convert(string s)
 {
     ret.clear();
     fori(s.size())
-        if (i < s.size() - 1 && s[i] == '\\' && (s[i + 1] == 'n' || s[i + 1] == -47))
+        if (i + 1 < (int) s.size() && s[i] == '\\' && (s[i + 1] == 'n' || s[i + 1] == -47))
         {
             ret.append("%0A");
             i += 1 + (s[i + 1] == -47);//-47 -- russian t, because has the same place with n (\n == \t_russian)
@@ -128,9 +128,9 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     QString s = item->text();
     this->setWindowTitle(s);
     int temp = mp[s];
-    if (temp == currentUser)
-        return;
     item->setFont(unbold);
+    if (temp == user_id)
+        return;
     archive[currentUser] = ui->textBrowser->toPlainText();
     ui->textBrowser->clear();
 
@@ -182,6 +182,7 @@ void Vk::run(int c)
 void Vk::changeEvent(QEvent *e)
 {
     if (e->type() == QEvent::ActivationChange)
+    {
         if (this->isActiveWindow())
             qDebug() << "activated",
             unread(),
@@ -189,10 +190,11 @@ void Vk::changeEvent(QEvent *e)
         else
             if (!this->isActiveWindow())
                 watchUnreadMessages->stop();
+    }
     QWidget::changeEvent(e);
 }
 
-Vk::Vk(char* s, QWidget *parent) :
+Vk::Vk(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Vk)
 {
@@ -297,6 +299,7 @@ void Vk::keyPressEvent(QKeyEvent* event)
         return;
     }
     if(event->modifiers() & Qt::ControlModifier)
+    {
         if (event->key() == Qt::Key_M)
         {
             cout << "marked as read\n";
@@ -308,6 +311,12 @@ void Vk::keyPressEvent(QKeyEvent* event)
             cout << jsonByUrl("https://api.vk.com/method/wall.get?owner_id=-29253653&count=5&v=5.24&access_token=" + key);
             return;
         } else
+        if (event->key() == Qt::Key_N)
+        {
+            cout << jsonByUrl("https://api.vk.com/method/account.getCounters?v=5.24&access_token=" + key);
+            return;
+        }
+    }
     QDialog::keyPressEvent(event);
 }
 
