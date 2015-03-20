@@ -57,7 +57,7 @@ def main():
             flag = True
             i += 1
         for i in range(min(len(a), len(b))):
-            if a[i]["comments"]["count"] != b[i]["comments"]["count"]:
+            if a[i]["comments"]["count"] < b[i]["comments"]["count"]:
                 d = b[i]["comments"]["count"] - a[i]["comments"]["count"]
                 if (d > 0):
                     try:
@@ -68,6 +68,8 @@ def main():
                 a[i]["comments"]["count"] = b[i]["comments"]["count"]
                 open(network.save, 'w').write(json.dumps(b, ensure_ascii=False))
                 flag = True
+            elif a[i]["comments"]["count"] > b[i]["comments"]["count"]:
+                a[i]["comments"]["count"] = b[i]["comments"]["count"]
 
         if flag:
             open(network.save, 'w').write(json.dumps(b, ensure_ascii=False))
