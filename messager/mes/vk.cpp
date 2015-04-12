@@ -144,6 +144,7 @@ void Vk::onItemDoubleClicked(QListWidgetItem* item)
     ui->textBrowser->ensureCursorVisible();
     unread();
     if (focused[currentUser] == -1)
+        focused[currentUser] = 0,
         run(countMessages);
 }
 
@@ -206,6 +207,7 @@ Vk::Vk(QWidget *parent) :
     setUrls();
     ui->setupUi(this);
     ui->textBrowser->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
+    this->setWindowIcon(QIcon("/home/igorjan/206round/vk/vk.png"));
     bold.setBold(true);
     unbold.setBold(false);
     fromBackup();
@@ -223,6 +225,7 @@ Vk::Vk(QWidget *parent) :
     fori(pairs.size())
         pairs[i].resize(countMessages);
     qDebug() << "all inits done";//------------------------------------------
+    focused[currentUser] = 0;
     run(countMessages);
     watchUnreadMessages = new QTimer(this);
     connect(watchUnreadMessages, SIGNAL(timeout()), this, SLOT(unread()));
@@ -282,6 +285,20 @@ void Vk::onReturn()
     unread();
     focused[currentUser] = 0;
     qDebug() << QString::fromStdString("sent message: " + s);
+    while (true)
+    {
+        size_t index = s.find("\\n");
+        if (index == string::npos)
+            break;
+        s = s.replace(index, 2, "\n");
+    }
+    while (true)
+    {
+        size_t index = s.find("\\т");
+        if (index == string::npos)
+            break;
+        s = s.replace(index, 3, "\n");
+    }
     date.setTime_t(QDateTime::currentMSecsSinceEpoch() / 1000);
     ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) + QString::fromStdString(":  Я\n     " + s));
     jsonByUrl(sendMessage + convert(s));
