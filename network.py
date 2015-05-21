@@ -10,7 +10,7 @@ user_id        = '56524497'
 ctdyear2011    = '-29253653'
 version        = '5.24'
 count          = 7
-needLikes      = ""#"&need_likes=1"
+needLikes      = "&need_likes=1"
 key            = open('/home/igorjan/key.vk', 'r').read()[:-1]
 api            = 'https://api.vk.com/method/'
 get            = 'https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token'
@@ -97,24 +97,58 @@ def getListOfUsers():
     r.write('-29253653 ctdyear2011\r')
     r.close()
 
+def getLikes():
+    c = {}
+    try:
+        n = 4
+        for i in range(1000):
+            url = api + 'wall.get?owner_id=' + ctdyear2011 + '&count=' + str(n) + '&v=' + version + '&access_token=' + key
+            x = f(url + '&offset=' + str(i * n))
+            if 'items' in x.keys() and len(x['items']) > 0:
+                for y in x['items']:
+                    print('parsing ' + str(y['id']))
+                    likes = int(y['likes']['count'])
+                    comm = int(y['comments']['count'])
+                    if not y['from_id'] in c:
+                        c[y['from_id']] = likes
+                    else:
+                        c[y['from_id']] += likes
+                    for comment in getComments(y['id'], comm):
+                        cc = int(comment['likes']['count'])
+                        if not comment['from_id'] in c:
+                            c[comment['from_id']] = cc
+                        else:
+                            c[comment['from_id']] += cc
+            else:
+                break
+            sleep(2)
+    except:
+        print("fail?")
+    users = parseListOfUsers()
+    for x in c:
+        print(users[x] + " " + str(c[x]))
+
 def getStat():
     a = []
-    n = 100
-    for i in range(40):
-        count = n
-        url = api + 'wall.get?owner_id=' + ctdyear2011 + '&count=' + str(count) + '&v=' + version + '&access_token=' + key
-        x = f(url + '&offset=' + str(i * n))
-        #print(x)
-        if 'items' in x.keys():
-            for y in x['items']:
-#                if (y['id'] == 9281):
-#                    print(y)
-#                    sys.exit()
-                a.append((y['comments']['count'], y['id']))
-        else:
-            break
+    try:
+        n = 99
+        for i in range(30):
+            url = api + 'wall.get?owner_id=' + ctdyear2011 + '&count=' + str(n + 1) + '&v=' + version + '&access_token=' + key
+            x = f(url + '&offset=' + str(i * n))
+            if 'items' in x.keys() and len(x['items']) > 0:
+                for y in x['items']:
+                    print(str(y['comments']['count']) + ' ' + str(y['id']))
+                    #if (y['id'] == 11746):
+                        #print(y)
+                        #sys.exit()
+            else:
+                break
+            sleep(2)
+    except:
+        print('Fail?')
     print(sorted(a)[::-1])
 
+#getLikes()
 #getStat()
 
 #url = "http://codeforces.ru/api/contest.standings?contestId=512&from=1&count=2"
