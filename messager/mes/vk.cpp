@@ -47,10 +47,15 @@ string Vk::convert(string s)
 void Vk::setUrls()
 {
     sendMessage = "https://api.vk.com/method/messages.send?v=5.24&access_token=" + key +  (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&message=";
-    getMessages = "https://api.vk.com/method/messages.getHistory?v=5.24&access_token=" + key +
-            (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&count=";
-    markAsRead  = "https://api.vk.com/method/messages.markAsRead?v=5.24&access_token=" + key +
-            (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id);
+    getMessages = "https://api.vk.com/method/messages.getHistory?v=5.24&access_token=" + key + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&count=";
+    markAsRead  = "https://api.vk.com/method/messages.markAsRead?v=5.24&access_token=" + key + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id);
+}
+
+void Vk::createUser(QString name, int id)
+{
+    ui->listWidget->addItem(name);
+    mp[name] = id;
+    indexes[id] = countOfUsers++;
 }
 
 Json::Value Vk::jsonByUrl(string url)
@@ -87,11 +92,15 @@ void Vk::unread()
             fromBackup("fullDatabase", t);
             if (z == countOfUsers)
             {
-                ui->textBrowser->append(QString::fromStdString("-----------------------------------O_O-----------------------------------new message from ")
-                                    + QString::fromStdString(itoa(t)));
-                ui->textBrowser->textCursor().movePosition(QTextCursor::End);
-                ui->textBrowser->ensureCursorVisible();
-                continue;
+                QString name;
+                if (user_id < 100)
+                    name = QString::fromStdString(jsonByUrl("https://api.vk.com/method/messages.getChat?v=5.24&access_token=" + key + "&chat_id=" + itoa(t))["response"]["title"].asString());
+                else
+                {
+                    auto response = jsonByUrl("https://api.vk.com/method/users.get?v=5.24&access_token=" + key + "&user_ids=" + itoa(t))["response"][0];
+                    name = QString::fromStdString(response["first_name"].asString() + " " + response["last_name"].asString());
+                }
+                createUser(name, t);
             }
         }
         ui->listWidget->item(indexes[t])->setFont(bold);
@@ -115,11 +124,7 @@ void Vk::fromBackup(string filename = "database", int id = -1)
             QString temp(s.substr(j + 1).data());
             j = atoi(s.substr(0, j).data());
             if (id == -1 || j == id)
-            {
-                ui->listWidget->addItem(temp);
-                mp[temp] = j;
-                indexes[j] = countOfUsers++;
-            }
+                createUser(temp, j);
         }
 }
 
@@ -199,7 +204,7 @@ Vk::Vk(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Vk)
 {
-    ifstream in("/home/igorjan/key.vk");
+    ifstream in("key.vk");
     in >> key;
     in.close();
     countMessages = 10;
@@ -207,7 +212,7 @@ Vk::Vk(QWidget *parent) :
     setUrls();
     ui->setupUi(this);
     ui->textBrowser->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
-    this->setWindowIcon(QIcon("/home/igorjan/206round/vk/vk.png"));
+    this->setWindowIcon(QIcon("vk.png"));
     bold.setBold(true);
     unbold.setBold(false);
     fromBackup();
