@@ -45,6 +45,7 @@ private:
     void fromBackup(std::string filename, int id);
     std::string convert(std::string s);
     void setUrls();
+    void createUser(QString name, int id);
 
     std::vector<std::string> temp;
     std::vector<std::vector<std::string> > pairs;
