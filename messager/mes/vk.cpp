@@ -75,6 +75,12 @@ Json::Value Vk::jsonByUrl(string url)
     return root[i];
 }
 
+string Vk::getUser(int t)
+{
+    auto response = jsonByUrl("https://api.vk.com/method/users.get?v=5.24&access_token=" + key + "&user_ids=" + itoa(t))["response"][0];
+    return response["first_name"].asString() + " " + response["last_name"].asString();
+}
+
 void Vk::unread()
 {
     auto x = jsonByUrl(getUnreadMessages)["response"];
@@ -92,14 +98,7 @@ void Vk::unread()
             fromBackup("fullDatabase", t);
             if (z == countOfUsers)
             {
-                QString name;
-                if (user_id < 100)
-                    name = QString::fromStdString(jsonByUrl("https://api.vk.com/method/messages.getChat?v=5.24&access_token=" + key + "&chat_id=" + itoa(t))["response"]["title"].asString());
-                else
-                {
-                    auto response = jsonByUrl("https://api.vk.com/method/users.get?v=5.24&access_token=" + key + "&user_ids=" + itoa(t))["response"][0];
-                    name = QString::fromStdString(response["first_name"].asString() + " " + response["last_name"].asString());
-                }
+                QString name = QString::fromStdString(t < 100 ? jsonByUrl("https://api.vk.com/method/messages.getChat?v=5.24&access_token=" + key + "&chat_id=" + itoa(t))["response"]["title"].asString() : getUser(t));
                 createUser(name, t);
             }
         }
@@ -168,10 +167,11 @@ void Vk::run(int c)
     {
         date.setTime_t(items[j - i - 1]["date"].asInt());
         qDebug() << QString::fromStdString("got message: " + pairs[currentUser][j - i - 1]);
+        int id = items[j - i - 1]["user_id"].asInt();
         ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) +
             QString::fromStdString(":  " + (items[j - i - 1]["out"].asInt() == 0 ?
                 //user_name, such difficult because of chats, looks more pretty
-                ui->listWidget->item(indexes[items[j - i - 1]["user_id"].asInt()])->text().toStdString() : "Я")
+                indexes.count(id) ? ui->listWidget->item(indexes[id])->text().toStdString() : getUser(id) : "Я")
             + "\n     " + pairs[currentUser][j - i - 1]));
         if (items[j - i - 1].isObject() && items[j - i - 1].isMember("attachments"))
             cout << "attachment: " << items[j - i - 1]["attachments"],

@@ -46,6 +46,7 @@ private:
     std::string convert(std::string s);
     void setUrls();
     void createUser(QString name, int id);
+    std::string getUser(int id);
 
     std::vector<std::string> temp;
     std::vector<std::vector<std::string> > pairs;
