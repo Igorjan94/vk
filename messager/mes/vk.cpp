@@ -246,7 +246,6 @@ Vk::Vk(QWidget *parent) :
 
 void Vk::onReturn()
 {
-    qDebug() << ui->lineEdit->text().toUtf8();
     string s = ui->lineEdit->text().toUtf8().data();
     if (s == "")
         return;
