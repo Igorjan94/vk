@@ -19,6 +19,7 @@
 #include <QListWidget>
 #include <QTimer>
 #include <QFont>
+#include <QTextCodec>
 
 namespace Ui {
 class Vk;
@@ -42,7 +43,7 @@ public slots:
 private:
     std::string itoa(int i, int base);
     Json::Value jsonByUrl(std::string url);
-    void fromBackup(std::string filename, int id);
+    void fromBackup(std::string filename, int id, QString name);
     std::string convert(std::string s);
     void setUrls();
     void createUser(QString name, int id);

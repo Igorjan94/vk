@@ -95,12 +95,7 @@ void Vk::unread()
         if (indexes.count(t) == 0)
         {
             int z = countOfUsers;
-            fromBackup("fullDatabase", t);
-            if (z == countOfUsers)
-            {
-                QString name = QString::fromStdString(t < 100 ? jsonByUrl("https://api.vk.com/method/messages.getChat?v=5.24&access_token=" + key + "&chat_id=" + itoa(t))["response"]["title"].asString() : getUser(t));
-                createUser(name, t);
-            }
+            fromBackup("fullDatabase", t, "");
         }
         ui->listWidget->item(indexes[t])->setFont(bold);
         int f = y["unread"].asInt();// - focused[currentUser];
@@ -110,10 +105,12 @@ void Vk::unread()
     }
 }
 
-void Vk::fromBackup(string filename = "database", int id = -1)
+void Vk::fromBackup(string filename = "database", int id = -1, QString name = "")
 {
+    qDebug() << "FROMBACKUP" << id << " " << name;
     ifstream file(filename);
     string s;
+    bool ok = false;
     if (file)
         while (getline(file, s))
         {
@@ -122,9 +119,18 @@ void Vk::fromBackup(string filename = "database", int id = -1)
                 j++;
             QString temp(s.substr(j + 1).data());
             j = atoi(s.substr(0, j).data());
-            if (id == -1 || j == id)
-                createUser(temp, j);
+            if (id == -1 || j == id || name == temp)
+                createUser(temp, j),
+                qDebug() << "created" << temp << " " << j,
+                ok = true;
         }
+    if (!ok && id > 0)
+    {
+        qDebug() << "USER NOT FOUND:(" << id;
+        QString name = QString::fromStdString(id < 100 ? jsonByUrl("https://api.vk.com/method/messages.getChat?v=5.24&access_token=" + key + "&chat_id=" + itoa(id))["response"]["title"].asString() : getUser(id));
+        qDebug() << "NEW" << name << " " << id;
+        createUser(name, id);
+    }
 }
 
 void Vk::onItemDoubleClicked(QListWidgetItem* item)
@@ -240,6 +246,7 @@ Vk::Vk(QWidget *parent) :
 
 void Vk::onReturn()
 {
+    qDebug() << ui->lineEdit->text().toUtf8();
     string s = ui->lineEdit->text().toUtf8().data();
     if (s == "")
         return;
@@ -250,8 +257,14 @@ void Vk::onReturn()
         int cc = 0;
         if (s.size() > 2)
             cc = atoi(s.substr(3).data());
+        auto t = QString::fromStdString(s.substr(3));
         switch (c)
         {
+            case 'u' :
+                qDebug() << "id" << cc << "name" << t;
+                if (mp.find(t) == mp.end() && indexes.find(cc) == indexes.end())
+                    fromBackup("fullDatabase", cc, t);
+                break;
             case 'r' :
                 AUTO_REFRESH_UNREAD = cc;
                 watchUnreadMessages->stop();
@@ -282,7 +295,7 @@ void Vk::onReturn()
                 cout << jsonByUrl("https://api.vk.com/method/" + s.substr(3) + "&v=5.24&access_token=" + key);
                 break;
             default:
-                qDebug() << "r == unread, c == count, m = markAsRead, e = execute";
+                qDebug() << "r == unread, c == count, m = markAsRead, e = execute, u = userAdd";
         }
         return;
     }
