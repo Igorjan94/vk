@@ -46,9 +46,9 @@ string Vk::convert(string s)
 
 void Vk::setUrls()
 {
-    sendMessage = "https://api.vk.com/method/messages.send?v=5.24&access_token=" + key +  (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&message=";
-    getMessages = "https://api.vk.com/method/messages.getHistory?v=5.24&access_token=" + key + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&count=";
-    markAsRead  = "https://api.vk.com/method/messages.markAsRead?v=5.24&access_token=" + key + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id);
+    sendMessage = api + "/messages.send?v=5.24&access_token=" + key +  (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&message=";
+    getMessages = api + "/messages.getHistory?v=5.24&access_token=" + key + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id) + "&count=";
+    markAsRead  = api + "/messages.markAsRead?v=5.24&access_token=" + key + (user_id < 100 ? "&chat_id=" : "&user_id=") + itoa(user_id);
 }
 
 void Vk::createUser(QString name, int id)
@@ -71,14 +71,16 @@ Json::Value Vk::jsonByUrl(string url)
         qDebug() << reply[i]->errorString();
 
     if (!reader[i].parse(reply[i]->readAll().data(), root[i]))
-        printf("%s %s\n", "Failed to parse configuration\n", reader[i].getFormatedErrorMessages().data());
+        printf("%s %s\n", "Failed to parse configuration\n", reader[i].getFormattedErrorMessages().data());
     return root[i];
 }
 
 string Vk::getUser(int t)
 {
-    auto response = jsonByUrl("https://api.vk.com/method/users.get?v=5.24&access_token=" + key + "&user_ids=" + itoa(t))["response"][0];
-    return response["first_name"].asString() + " " + response["last_name"].asString();
+    auto response = jsonByUrl(api + "/users.get?v=5.24&access_token=" + key + "&user_ids=" + itoa(t))["response"][0];
+    string name = response["first_name"].asString() + " " + response["last_name"].asString();
+    createUser(QString::fromStdString(name), t);
+    return name;
 }
 
 void Vk::unread()
@@ -93,10 +95,7 @@ void Vk::unread()
             t = y["message"]["chat_id"].asInt();
         qDebug() << "unread from " << t;
         if (indexes.count(t) == 0)
-        {
-            int z = countOfUsers;
             fromBackup("fullDatabase", t, "");
-        }
         ui->listWidget->item(indexes[t])->setFont(bold);
         int f = y["unread"].asInt();// - focused[currentUser];
         if (indexes[t] == currentUser)
@@ -127,7 +126,7 @@ void Vk::fromBackup(string filename = "database", int id = -1, QString name = ""
     if (!ok && id > 0)
     {
         qDebug() << "USER NOT FOUND:(" << id;
-        QString name = QString::fromStdString(id < 100 ? jsonByUrl("https://api.vk.com/method/messages.getChat?v=5.24&access_token=" + key + "&chat_id=" + itoa(id))["response"]["title"].asString() : getUser(id));
+        QString name = QString::fromStdString(id < 100 ? jsonByUrl(api + "/messages.getChat?v=5.24&access_token=" + key + "&chat_id=" + itoa(id))["response"]["title"].asString() : getUser(id));
         qDebug() << "NEW" << name << " " << id;
         createUser(name, id);
     }
@@ -214,7 +213,7 @@ Vk::Vk(QWidget *parent) :
     in >> key;
     in.close();
     countMessages = 10;
-    getUnreadMessages = "https://api.vk.com/method/messages.getDialogs?v=5.27&unread=1&access_token=" + key;
+    getUnreadMessages = api + "/messages.getDialogs?v=5.27&unread=1&access_token=" + key;
     setUrls();
     ui->setupUi(this);
     ui->textBrowser->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
@@ -246,7 +245,6 @@ Vk::Vk(QWidget *parent) :
 
 void Vk::onReturn()
 {
-    qDebug() << ui->lineEdit->text().toUtf8();
     string s = ui->lineEdit->text().toUtf8().data();
     if (s == "")
         return;
@@ -292,7 +290,7 @@ void Vk::onReturn()
                 break;
             case 'e' :
                 qDebug() << "executed" << QString::fromStdString(s.substr(3));
-                cout << jsonByUrl("https://api.vk.com/method/" + s.substr(3) + "&v=5.24&access_token=" + key);
+                cout << jsonByUrl(api + "/" + s.substr(3) + "&v=5.24&access_token=" + key);
                 break;
             default:
                 qDebug() << "r == unread, c == count, m = markAsRead, e = execute, u = userAdd";
@@ -327,6 +325,21 @@ void Vk::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Escape)
         return;
+    if ((event->modifiers() & Qt::ShiftModifier) && (event->key() == Qt::Key_F5))
+    {
+        int cc = 10;
+        countMessages = cc;
+        qDebug() << "countMessages set to" << cc;
+        setUrls();
+        temp.clear();
+        temp.resize(cc, "asfd@#");
+        fori(pairs.size())
+            pairs[i].clear(),
+            pairs[i].resize(cc);
+        ui->textBrowser->clear();
+        run(countMessages);
+        return;
+    }
     if(((event->modifiers() & Qt::ControlModifier) && (event->key() == Qt::Key_R)) || event->key() == Qt::Key_F5)
     {
         cout << "updating\n";
@@ -343,12 +356,12 @@ void Vk::keyPressEvent(QKeyEvent* event)
         } else
         if (event->key() == Qt::Key_L)
         {
-            cout << jsonByUrl("https://api.vk.com/method/wall.get?owner_id=-29253653&count=5&v=5.24&access_token=" + key);
+            cout << jsonByUrl(api + "/wall.get?owner_id=-29253653&count=5&v=5.24&access_token=" + key);
             return;
         } else
         if (event->key() == Qt::Key_N)
         {
-            cout << jsonByUrl("https://api.vk.com/method/account.getCounters?v=5.24&access_token=" + key);
+            cout << jsonByUrl(api + "/account.getCounters?v=5.24&access_token=" + key);
             return;
         }
     }
