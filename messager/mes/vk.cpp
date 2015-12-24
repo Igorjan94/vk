@@ -53,6 +53,8 @@ void Vk::setUrls()
 
 void Vk::createUser(QString name, int id)
 {
+    if (indexes.find(id) != indexes.end())
+        return;
     ui->listWidget->addItem(name);
     mp[name] = id;
     indexes[id] = countOfUsers++;
