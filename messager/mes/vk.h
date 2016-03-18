@@ -81,7 +81,7 @@ private:
     std::string getMessages;
     std::string markAsRead;
     std::string getUnreadMessages;
-    std::string api = "https://api.vk.com/method/";
+    std::string api = "https://api.vk.com/method";
 };
 
 #endif // VK_H

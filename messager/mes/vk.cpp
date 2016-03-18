@@ -181,8 +181,17 @@ void Vk::run(int c)
                 indexes.count(id) ? ui->listWidget->item(indexes[id])->text().toStdString() : getUser(id) : "Я")
             + "\n     " + pairs[currentUser][j - i - 1]));
         if (items[j - i - 1].isObject() && items[j - i - 1].isMember("attachments"))
-            cout << "attachment: " << items[j - i - 1]["attachments"],
+        {
+            for (auto& attach : items[j - i - 1]["attachments"])
+                if (attach["type"].asString() != "video")
+                    cout << "attachment: " << items[j - i - 1]["attachments"];
+                else
+                {
+                    attach = attach["video"];
+                    cout << "video: " << jsonByUrl(api + "/video.get?v=5.24&access_token=" + key + "&videos=" + attach["owner_id"].asString() + "_" + attach["id"].asString() + "_" + attach["access_key"].asString())["response"];
+                }
             ui->textBrowser->append("--------------------------------------!!!attachments!!!--------------------------------------");
+        }
         if (items[j - i - 1].isObject() && items[j - i - 1].isMember("fwd_messages"))
             cout << "fwdmsg: " << items[j - i - 1]["fwd_messages"],
             ui->textBrowser->append("--------------------------------------!!!fwdMessages!!!--------------------------------------");
@@ -214,7 +223,7 @@ Vk::Vk(QWidget *parent) :
     ifstream in("key.vk");
     in >> key;
     in.close();
-    countMessages = 10;
+    countMessages = 12;
     getUnreadMessages = api + "/messages.getDialogs?v=5.27&unread=1&access_token=" + key;
     setUrls();
     ui->setupUi(this);
@@ -329,7 +338,7 @@ void Vk::keyPressEvent(QKeyEvent* event)
         return;
     if ((event->modifiers() & Qt::ShiftModifier) && (event->key() == Qt::Key_F5))
     {
-        int cc = 10;
+        int cc = 12;
         countMessages = cc;
         qDebug() << "countMessages set to" << cc;
         setUrls();
