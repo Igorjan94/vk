@@ -1,6 +1,5 @@
 #include "vk.h"
 #include "ui_vk.h"
-#include <cstdlib>
 
 using namespace std;
 
@@ -172,7 +171,7 @@ void Vk::run(int c)
         pairs[currentUser][i] = items[i]["body"].asString();
     fori(j)
     {
-        date.setTime_t(items[j - i - 1]["date"].asInt());
+        date.setTime_t(items[j - i - 1]["date"].asInt() + 60 * 60 * 3);
         qDebug() << QString::fromStdString("got message: " + pairs[currentUser][j - i - 1]);
         int id = items[j - i - 1]["user_id"].asInt();
         ui->textBrowser->append(date.toString(Qt::SystemLocaleShortDate) +

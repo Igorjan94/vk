@@ -7,16 +7,18 @@ import sys
 from time import sleep
 
 user_id        = '56524497'
+chat_id        = '21'
 ctdyear2011    = '-29253653'
 version        = '5.24'
 count          = 7
 needLikes      = "&need_likes=1"
-key            = open('/home/igorjan/key.vk', 'r').read()[:-1]
+key            = open('key.vk', 'r').read()[:-1]
 api            = 'https://api.vk.com/method/'
 get            = 'https://oauth.vk.com/authorize?client_id=4552027&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,offline&response_type=token'
 url            = api + 'wall.get?owner_id=' + ctdyear2011 + '&count=' + str(count) + '&v=' + version + '&access_token=' + key
 getCommentsUrl = api + 'wall.getComments?owner_id=' + ctdyear2011 + '&v=' + version + '&sort=desc' + needLikes + '&access_token=' + key + '&post_id='
-sendMessage    = api + 'messages.send?user_id=' + user_id + '&v=' + version + '&access_token=' + key + '&message='
+sendMessageUser = api + 'messages.send?user_id=' + user_id + '&v=' + version + '&access_token=' + key + '&message='
+sendMessageChat = api + 'messages.send?chat_id=' + chat_id + '&v=' + version + '&access_token=' + key + '&message='
 addComment     = api + 'wall.addComment?owner_id=' + ctdyear2011 + '&v=' + version + '&access_token=' + key + '&post_id='
 addPost        = api + 'wall.post?owner_id=' + ctdyear2011 + '&v=' + version + '&access_token=' + key + '&message='
 urlToGet       = api + 'groups.getMembers?group_id=' + ctdyear2011[1:] + '&v=' + version + '&access_token=' + key
@@ -148,6 +150,7 @@ def getStat():
         print('Fail?')
     print(sorted(a)[::-1])
 
+# sendMessageFun('💩' * 20)
 #getLikes()
 #getStat()
 

@@ -19,6 +19,6 @@ HEADERS  += vk.h
 
 FORMS    += vk.ui
 
-QMAKE_INCDIR += /usr/include/
+QMAKE_INCDIR += /usr/include/c++/6.1.1/x86_64-pc-linux-gnu
+
 QMAKE_LIBS += -ljsoncpp
-QMAKE_CXXFLAGS += -std=c++11
